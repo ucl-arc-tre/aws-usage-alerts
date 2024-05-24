@@ -1,0 +1,11 @@
+groupTagKey: project     # Tag key to use for grouping
+storageBackend: inMemory # Options: {inMemory, configMap}
+adminEmails:             # Email addresses of administrators
+  - alice@example.com
+
+groups:
+  - name: example        # All resources tagged with project=example
+    emails:              # Emails for notifications
+      - bob@example.com
+    thresholds:          # Resource thresholds in $
+      efs: 100
