@@ -26,6 +26,8 @@ func New() *Manager {
 	switch backend := config.StorageBackend(); backend {
 	case "inMemory":
 		manager.db = db.NewInMemory()
+	case "configMap":
+		manager.db = db.NewConfigMap()
 	default:
 		panic(fmt.Sprintf("Unrecognized storage backend [%v]", backend))
 	}
