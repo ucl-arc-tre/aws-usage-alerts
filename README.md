@@ -35,3 +35,7 @@ aws pricing list-price-lists --service-code AmazonEFS --currency-code USD --effe
 aws pricing get-price-list-file-url --price-list-arn arn:aws:pricing:::price-list/aws/AmazonEFS/USD/20240216202306/eu-west-2 --file-format json  --region "us-east-1
 # GET URL
 ```
+
+=======
+
+> > > > > > > origin/main
