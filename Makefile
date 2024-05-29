@@ -12,4 +12,13 @@ build:
 test:
 	go test ./...
 
+dev:
+	cd deploy/dev && \
+	terraform init && \
+	terraform apply --auto-approve
+
+dev-destroy:
+	cd deploy/dev && \
+	terraform apply --auto-approve -destroy
+
 .SILENT:  # all targets

@@ -1,11 +1,15 @@
 package db
 
-import "github.com/ucl-arc-tre/aws-cost-alerts/internal/types"
+import (
+	"github.com/rs/zerolog/log"
+	"github.com/ucl-arc-tre/aws-cost-alerts/internal/types"
+)
 
 type ConfigMap struct {
 }
 
 func NewConfigMap() *ConfigMap {
+	log.Debug().Msg("Creating new config map storage backend")
 	return &ConfigMap{}
 }
 

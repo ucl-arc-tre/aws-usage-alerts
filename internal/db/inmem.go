@@ -13,7 +13,11 @@ type InMemory struct {
 }
 
 func NewInMemory() *InMemory {
-	return &InMemory{}
+	log.Debug().Msg("Creating new in-memory storage backend")
+	db := InMemory{
+		state: types.MakeState(),
+	}
+	return &db
 }
 
 func (d *InMemory) Load() *types.StateV1alpha1 {

@@ -22,6 +22,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /app/main main
 
 ENV DEBUG="false"
+ENV HEALTH_PORT="8080"
 
 USER user
 CMD ["./main"]

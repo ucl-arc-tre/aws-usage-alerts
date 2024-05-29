@@ -1,15 +1,12 @@
 package types
 
-import "time"
-
-type Cost struct {
-	MicroCents int
-	Per        time.Duration
-}
+type EmailAddress string
 
 type Group string
 
+type ResourceUsage map[Group]Cost
+
 type AWSUsage struct {
-	EFS map[Group]Cost
-	EC2 map[Group]Cost
+	EFS ResourceUsage
+	EC2 ResourceUsage
 }

@@ -1,0 +1,49 @@
+{
+  "formatVersion" : "v1.0",
+  "disclaimer" : "This pricing list is for informational purposes only. All prices are subject to the additional terms included in the pricing pages on http://aws.amazon.com. All Free Tier prices are also subject to the terms included at https://aws.amazon.com/free/",
+  "offerCode" : "AmazonEFS",
+  "version" : "20240216202306",
+  "publicationDate" : "2024-02-16T20:23:06Z",
+  "products" : {
+    "9D8Y226KZNKRMDQK" : {
+      "sku" : "9D8Y226KZNKRMDQK",
+      "productFamily" : "Storage",
+      "attributes" : {
+        "servicecode" : "AmazonEFS",
+        "location" : "EU (London)",
+        "locationType" : "AWS Region",
+        "storageClass" : "General Purpose",
+        "usagetype" : "EUW2-TimedStorage-ByteHrs",
+        "operation" : "",
+        "regionCode" : "eu-west-2",
+        "servicename" : "Amazon Elastic File System"
+      }
+    }
+  },
+  "terms" : {
+    "OnDemand" : {
+      "9D8Y226KZNKRMDQK" : {
+        "9D8Y226KZNKRMDQK.JRTCKXETXF" : {
+          "offerTermCode" : "JRTCKXETXF",
+          "sku" : "9D8Y226KZNKRMDQK",
+          "effectiveDate" : "2024-02-01T00:00:00Z",
+          "priceDimensions" : {
+            "9D8Y226KZNKRMDQK.JRTCKXETXF.6YS6EN2CT7" : {
+              "rateCode" : "9D8Y226KZNKRMDQK.JRTCKXETXF.6YS6EN2CT7",
+              "description" : "USD $0.33 per GB-Mo for Standard storage (EUW2)",
+              "beginRange" : "0",
+              "endRange" : "Inf",
+              "unit" : "GB-Mo",
+              "pricePerUnit" : {
+                "USD" : "0.3300000000"
+              },
+              "appliesTo" : [ ]
+            }
+          },
+          "termAttributes" : { }
+        }
+      }
+    }
+  },
+  "attributesList" : { }
+}
