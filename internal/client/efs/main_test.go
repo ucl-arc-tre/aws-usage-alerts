@@ -55,7 +55,7 @@ func TestCurrentCost(t *testing.T) {
 	client := NewMockClient()
 	cost, err := client.CurrentCostPerUnit()
 	assert.NoError(t, err)
-	assert.Equal(t, cost.Standard.Dollars, 0.33)
+	assert.Equal(t, cost.Standard.Dollars, types.USD(0.33))
 	assert.Zero(t, cost.Archive.Dollars)
 	assert.Zero(t, cost.IA)
 	assert.Equal(t, cost.Standard.PerTime.Hours(), 730.5)
