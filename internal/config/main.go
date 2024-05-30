@@ -69,8 +69,7 @@ func GroupTagKey() string {
 }
 
 func ManagerLoopDelayDuration() time.Duration {
-	return 10 * time.Second
-	//return 1 * time.Minute
+	return 1 * time.Minute
 }
 
 func AWS() aws.Config {

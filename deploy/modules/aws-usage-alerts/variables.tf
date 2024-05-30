@@ -36,8 +36,3 @@ variable "config_file_content" {
   type        = string
   description = "File contents of the config.yaml file"
 }
-
-variable "email_addresses" {
-	type = list(string)
-	description = "List of email addresses to notify"
-}

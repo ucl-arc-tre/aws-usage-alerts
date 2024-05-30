@@ -185,7 +185,7 @@ resource "aws_sns_topic" "this" {
 }
 
 resource "aws_sns_topic_subscription" "main" {
-  for_each = toset(var.email_addresses)
+  for_each = toset(local.config.adminEmails)
 
   topic_arn = aws_sns_topic.this.arn
   protocol  = "email"

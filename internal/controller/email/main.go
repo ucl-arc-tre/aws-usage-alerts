@@ -31,7 +31,7 @@ func (c *Controller) Send(state *types.StateV1alpha1) {
 		return
 	}
 	content := ""
-	for group, cost := range state.GroupsUsage {
+	for group, cost := range state.GroupsUsage() {
 		threshold := config.GroupThreshold(group)
 		if threshold < 1e-15 {
 			log.Warn().Any("group", group).Msg("Unset or zero threshold")
@@ -40,7 +40,7 @@ func (c *Controller) Send(state *types.StateV1alpha1) {
 		usagePercentage := float64(cost.Total().Dollars/threshold) * 100.0
 		if usagePercentage > 100 {
 			log.Info().Any("group", group).Float64("%", usagePercentage).Msg(">100% used")
-			content += fmt.Sprintf("%v  Used: %.2f%% \n ", group, usagePercentage)
+			content += fmt.Sprintf("%v  %.2f%% \n ", group, usagePercentage)
 		} else {
 			log.Debug().Any("group", group).Float64("%", usagePercentage).Msg("Calculated usage")
 		}
@@ -86,7 +86,7 @@ func setEmailSentNowForAdmins(state *types.StateV1alpha1) {
 }
 
 const (
-	header = `\n
+	header = `
 👋 there are aws-usage-alert notifications:
 
 Group         Usage
