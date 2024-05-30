@@ -10,9 +10,10 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/ucl-arc-tre/aws-cost-alerts/internal/meta"
 	"github.com/ucl-arc-tre/aws-cost-alerts/internal/types"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -22,7 +23,7 @@ const (
 )
 
 type ConfigMap struct {
-	client v1.ConfigMapInterface
+	client corev1.ConfigMapInterface
 }
 
 func NewConfigMap() *ConfigMap {
@@ -34,12 +35,12 @@ func NewConfigMap() *ConfigMap {
 }
 
 func (cm *ConfigMap) Load() *types.StateV1alpha1 {
-	rawCM, err := cm.client.Get(context.Background(), configMapName, metav1.GetOptions{})
-	if err != nil || rawCM == nil {
-		log.Err(err).Msg("Failed to get state")
-		return nil
+	k8sConfigMap, err := cm.client.Get(context.Background(), configMapName, metav1.GetOptions{})
+	if err != nil || k8sConfigMap == nil {
+		log.Info().Err(err).Msg("State did not exist")
+		return &types.StateV1alpha1{}
 	}
-	data, exists := rawCM.Data[configMapKey]
+	data, exists := k8sConfigMap.Data[configMapKey]
 	if !exists || data == "" {
 		log.Error().Str("name", configMapName).Str("key", configMapKey).Msg("Failed to find configMap")
 		return nil
@@ -56,6 +57,7 @@ func (cm *ConfigMap) Load() *types.StateV1alpha1 {
 			log.Err(err).Any("version", version).Msg("Failed to unmarshal state")
 			return nil
 		} else {
+			// todo: set lease
 			return &state
 		}
 	default:
@@ -65,10 +67,47 @@ func (cm *ConfigMap) Load() *types.StateV1alpha1 {
 }
 
 func (cm *ConfigMap) Store(state *types.StateV1alpha1) {
-	panic("not implemented")
+	if !cm.existsInK8s() {
+		log.Debug().Msg("State did not yet exist in k8s")
+		_, err := cm.client.Create(context.Background(), cm.toK8s(state), metav1.CreateOptions{})
+		if err != nil {
+			log.Err(err).Msg("Failed to store k8s config map")
+		}
+	} else {
+		_, err := cm.client.Update(context.Background(), cm.toK8s(state), metav1.UpdateOptions{})
+		if err != nil {
+			log.Err(err).Msg("Failed to update k8s config map")
+		}
+	}
 }
 
-func newClient() v1.ConfigMapInterface {
+func (cm *ConfigMap) existsInK8s() bool {
+	k8sConfigMap, err := cm.client.Get(context.Background(), configMapName, metav1.GetOptions{})
+	return k8sConfigMap != nil && err == nil
+}
+
+func (cm *ConfigMap) toK8s(state *types.StateV1alpha1) *v1.ConfigMap {
+	if cm == nil || state == nil {
+		log.Error().Msg("Cannot convert state to k8s config map - not defined")
+		return nil
+	}
+	k8sConfigMap := v1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      configMapName,
+			Namespace: currentPodNamespace(),
+		},
+		Data: map[string]string{
+			configMapKey: state.Marshal(),
+		},
+	}
+	return &k8sConfigMap
+}
+
+func newClient() corev1.ConfigMapInterface {
 	clientSet, error := inClusterClientSet()
 	assertNotNil(error)
 	return clientSet.CoreV1().ConfigMaps(currentPodNamespace())
@@ -87,6 +126,9 @@ func inClusterClientSet() (*kubernetes.Clientset, error) {
 }
 
 func currentPodNamespace() string {
+	if namespace := os.Getenv("NAMESPACE"); namespace != "" {
+		return namespace
+	}
 	data, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 	if err != nil {
 		log.Err(err).Msg("Failed to get service account file. Returning an empty namespace")

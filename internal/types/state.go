@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -68,6 +69,15 @@ func (s *StateV1alpha1) addCurrentMonthIfRequired() {
 	if !exists {
 		log.Debug().Any("yearAndMonth", yearAndMonth).Msg("Adding new year/month")
 		s.GroupsUsageInMonth[yearAndMonth] = GroupsUsage{}
+	}
+}
+
+func (s *StateV1alpha1) Marshal() string {
+	if result, err := json.Marshal(s); err != nil {
+		log.Err(err).Msg("Failed to marshal. Using an empty string")
+		return ""
+	} else {
+		return string(result)
 	}
 }
 
