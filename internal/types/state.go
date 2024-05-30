@@ -10,8 +10,14 @@ type YearAndMonth string
 
 type GroupsUsage map[Group]AWSAccumulatedCost
 
+type StateVersion string
+
+type StateWithVersionVersion struct {
+	Version StateVersion `json:"version"`
+}
+
 type StateV1alpha1 struct {
-	Version            string                       `json:"version"`
+	Version            StateVersion                 `json:"version"`
 	GroupsUsageInMonth map[YearAndMonth]GroupsUsage `json:"groups_usage"`
 	EmailsSentAt       map[EmailAddress]time.Time   `json:"emails_sent_at"`
 }

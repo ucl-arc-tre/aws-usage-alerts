@@ -10,18 +10,32 @@ repos:
     rev: v1.5.0
     hooks:
       - id: detect-secrets
-        args: ['--baseline', '.github/.secrets.baseline']
-
-  - repo: local
-    hooks:
-      - id: go
-        name: go
-        language: system
-        entry: bash -c 'gofmt -s -w . && go mod tidy && go vet ./...'
-        pass_filenames: false
-        types: [go]
+        args: ["--baseline", ".github/.secrets.baseline"]
 
   - repo: https://github.com/golangci/golangci-lint
     rev: v1.58.2
     hooks:
       - id: golangci-lint
+
+  - repo: local
+    hooks:
+      - id: go-fmt
+        name: go-fmt
+        language: system
+        entry: gofmt -s -w
+        pass_filenames: true
+        types: [go]
+
+      - id: go-mod-tidy
+        name: go-mod-tidy
+        language: system
+        entry: go mod tidy
+        pass_filenames: false
+        types: [go]
+
+      - id: go-vet
+        name: go-vet
+        language: system
+        entry: go vet ./...
+        pass_filenames: false
+        types: [go]
