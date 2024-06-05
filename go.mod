@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/pricing v1.28.5
 	github.com/aws/aws-sdk-go-v2/service/sns v1.29.8
 	github.com/rs/zerolog v1.33.0
-	github.com/spf13/viper v1.18.2
+	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
 	k8s.io/api v0.30.1
 	k8s.io/apimachinery v0.30.1
@@ -63,12 +63,12 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20240525044651-4c93da0ed11d // indirect
 	golang.org/x/net v0.23.0 // indirect
-	golang.org/x/oauth2 v0.15.0 // indirect
+	golang.org/x/oauth2 v0.18.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/term v0.18.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
