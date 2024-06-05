@@ -1,0 +1,9 @@
+.env*
+config.*
+!*.sample.*
+tmp*
+kube*.y*ml
+deploy/dev/*.lock.*
+.terraform
+*tfstate*
+.DS_Store
