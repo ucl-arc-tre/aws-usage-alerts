@@ -3,7 +3,7 @@ module github.com/ucl-arc-tre/aws-cost-alerts
 go 1.22.3
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.27.0
+	github.com/aws/aws-sdk-go-v2 v1.27.1
 	github.com/aws/aws-sdk-go-v2/config v1.27.16
 	github.com/aws/aws-sdk-go-v2/service/efs v1.28.8
 	github.com/aws/aws-sdk-go-v2/service/pricing v1.28.5
