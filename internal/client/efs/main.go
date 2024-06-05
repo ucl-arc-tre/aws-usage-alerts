@@ -3,6 +3,7 @@ package efs
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	awsEFS "github.com/aws/aws-sdk-go-v2/service/efs"
 	awsTypes "github.com/aws/aws-sdk-go-v2/service/efs/types"
@@ -73,24 +74,29 @@ func (c *Client) CurrentCostPerUnit() (EFSCostPerUnit, error) {
 	cost := EFSCostPerUnit{}
 	priceList, err := c.priceList()
 	if err != nil {
+		cost.Errors = append(cost.Errors, err)
 		return cost, err
 	}
 	if v, err := priceList.CostOfStorageClass("General Purpose"); err != nil {
-		log.Err(err).Msg("Failed to get general sku cost")
+		cost.Errors = append(cost.Errors, err)
 	} else {
 		cost.Standard = v
 	}
 	if v, err := priceList.CostOfStorageClass("Infrequent Access"); err != nil {
-		log.Err(err).Msg("Failed to get IA sku cost")
+		cost.Errors = append(cost.Errors, err)
 	} else {
 		cost.IA = v
 	}
 	if v, err := priceList.CostOfStorageClass("Archive"); err != nil {
-		log.Err(err).Msg("Failed to get archive sku cost")
+		cost.Errors = append(cost.Errors, err)
 	} else {
 		cost.Archive = v
 	}
-	return cost, nil
+	if len(cost.Errors) > 0 {
+		return cost, fmt.Errorf("%v", cost.Errors)
+	} else {
+		return cost, nil
+	}
 }
 
 func (c *Client) priceList() (EFSPriceList, error) {

@@ -13,9 +13,13 @@ type Controller struct {
 }
 
 func New() *Controller {
+	return NewWithClients(ec2Client.New(), efsClient.New())
+}
+
+func NewWithClients(ec2 ec2Client.Interface, efs efsClient.Interface) *Controller {
 	controller := Controller{
-		ec2: ec2Client.New(),
-		efs: efsClient.New(),
+		ec2: ec2,
+		efs: efs,
 	}
 	return &controller
 }

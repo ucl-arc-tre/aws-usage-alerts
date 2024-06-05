@@ -4,6 +4,7 @@ package db
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"strings"
 
@@ -34,35 +35,36 @@ func NewConfigMap() *ConfigMap {
 	return &cm
 }
 
-func (cm *ConfigMap) Load() *types.StateV1alpha1 {
+func (cm *ConfigMap) Load() (*types.StateV1alpha1, error) {
 	k8sConfigMap, err := cm.client.Get(context.Background(), configMapName, metav1.GetOptions{})
 	if err != nil || k8sConfigMap == nil {
 		log.Info().Err(err).Msg("State did not exist")
-		return &types.StateV1alpha1{}
+		state := types.MakeState()
+		return &state, nil
 	}
 	data, exists := k8sConfigMap.Data[configMapKey]
 	if !exists || data == "" {
 		log.Error().Str("name", configMapName).Str("key", configMapKey).Msg("Failed to find configMap")
-		return nil
+		return nil, errors.New("Failed to load state")
 	}
 	var stateWithVersion types.StateWithVersionVersion
 	if err := json.Unmarshal([]byte(data), &stateWithVersion); err != nil {
 		log.Err(err).Msg("Failed to unmarshal state into something with a defined version")
-		return nil
+		return nil, errors.New("Failed to load state")
 	}
 	switch version := stateWithVersion.Version; version {
 	case meta.VersionV1alpha1:
 		var state types.StateV1alpha1
 		if err := json.Unmarshal([]byte(data), &state); err != nil {
 			log.Err(err).Any("version", version).Msg("Failed to unmarshal state")
-			return nil
+			return nil, errors.New("Failed to load state")
 		} else {
 			// todo: set lease
-			return &state
+			return &state, nil
 		}
 	default:
 		log.Err(err).Any("version", version).Msg("unsupported version")
-		return nil
+		return nil, errors.New("Failed to load state")
 	}
 }
 

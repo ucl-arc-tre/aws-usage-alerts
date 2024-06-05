@@ -40,7 +40,11 @@ resource "kubernetes_deployment" "this" {
   }
 
   spec {
-    replicas = 1
+    replicas = 1  # WARNING: non-leased configmap backends do not support >1 replica
+
+    strategy {
+    	type = "Recreate"  # Wait for operations to finish
+    }
 
     selector {
       match_labels = {
@@ -57,6 +61,7 @@ resource "kubernetes_deployment" "this" {
 
       spec {
         restart_policy = "Always"
+        service_account_name = kubernetes_service_account.this.metadata.0.name
 
         container {
           image             = var.image
@@ -177,6 +182,46 @@ resource "kubernetes_secret" "aws_keys" {
   data = {
     "AWS_ACCESS_KEY_ID"     = aws_iam_access_key.this.id
     "AWS_SECRET_ACCESS_KEY" = aws_iam_access_key.this.secret
+  }
+}
+
+
+resource "kubernetes_service_account" "this" {
+  metadata {
+    name      = var.app_name
+    namespace = kubernetes_namespace.this.metadata.0.name
+  }
+}
+
+resource "kubernetes_role" "this" {
+  metadata {
+    name      = var.app_name
+    namespace = kubernetes_namespace.this.metadata.0.name
+  }
+
+  rule {
+    api_groups = [""]
+    resources  = ["configmaps"]
+    verbs      = ["get", "list", "create", "update"]
+  }
+}
+
+resource "kubernetes_role_binding" "this" {
+  metadata {
+    name      = var.app_name
+    namespace = kubernetes_namespace.this.metadata.0.name
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = kubernetes_service_account.this.metadata.0.name
+    namespace = kubernetes_service_account.this.metadata.0.namespace
+  }
+
+  role_ref {
+    kind      = "Role"
+    name      = kubernetes_role.this.metadata.0.name
+    api_group = "rbac.authorization.k8s.io"
   }
 }
 

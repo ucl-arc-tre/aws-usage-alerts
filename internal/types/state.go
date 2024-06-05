@@ -37,7 +37,7 @@ func (s *StateV1alpha1) AddUsage(usage AWSUsage) {
 		return
 	}
 	s.addCurrentMonthIfRequired()
-	groupsUsage := s.GroupsUsageInMonth[yearAndMonthNow()]
+	groupsUsage := s.GroupsUsageInMonth[YearAndMonthNow()]
 	log.Debug().Msg("Adding resource usage")
 	for group, cost := range usage.EFS {
 		accCost, exists := groupsUsage[group]
@@ -53,18 +53,18 @@ func (s *StateV1alpha1) AddUsage(usage AWSUsage) {
 			}
 		}
 	}
-	s.GroupsUsageInMonth[yearAndMonthNow()] = groupsUsage
+	s.GroupsUsageInMonth[YearAndMonthNow()] = groupsUsage
 	log.Debug().Any("state", s).Msg("Added usage")
 	// todo: ec2
 }
 
 // Usage for every group in the current month
 func (s *StateV1alpha1) GroupsUsage() GroupsUsage {
-	return s.GroupsUsageInMonth[yearAndMonthNow()]
+	return s.GroupsUsageInMonth[YearAndMonthNow()]
 }
 
 func (s *StateV1alpha1) addCurrentMonthIfRequired() {
-	yearAndMonth := yearAndMonthNow()
+	yearAndMonth := YearAndMonthNow()
 	_, exists := s.GroupsUsageInMonth[yearAndMonth]
 	if !exists {
 		log.Debug().Any("yearAndMonth", yearAndMonth).Msg("Adding new year/month")
@@ -81,6 +81,6 @@ func (s *StateV1alpha1) Marshal() string {
 	}
 }
 
-func yearAndMonthNow() YearAndMonth {
+func YearAndMonthNow() YearAndMonth {
 	return YearAndMonth(time.Now().Format("2006-01"))
 }

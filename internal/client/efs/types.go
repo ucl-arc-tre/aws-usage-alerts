@@ -32,8 +32,10 @@ type EFSFileSystem struct {
 }
 
 func (e *EFSFileSystem) Cost(perUnitCost EFSCostPerUnit) types.Cost {
-	cost := types.Cost{}
-	cost.Per = perUnitCost.Standard.PerTime // assumes standard == IA == archive
+	cost := types.Cost{
+		Per:    perUnitCost.Standard.PerTime, // assumes standard == IA == archive
+		Errors: perUnitCost.Errors,
+	}
 	cost.Dollars += types.USD(float64(perUnitCost.Standard.Dollars) * e.Size.StandardBytes * bytesPerGB)
 	cost.Dollars += types.USD(float64(perUnitCost.IA.Dollars) * e.Size.IABytes * bytesPerGB)
 	cost.Dollars += types.USD(float64(perUnitCost.Archive.Dollars) * e.Size.ArchiveBytes * bytesPerGB)
@@ -44,6 +46,7 @@ type EFSCostPerUnit struct {
 	Standard types.CostPerUnit
 	IA       types.CostPerUnit
 	Archive  types.CostPerUnit
+	Errors   []error
 }
 
 type SkuId string
@@ -93,9 +96,9 @@ func (e *EFSPriceList) costOfSku(sku SkuId) (types.CostPerUnit, error) {
 	if !ok {
 		return types.CostPerUnit{}, fmt.Errorf("failed to find [%v] in OnDemand price list", sku)
 	}
-	log.Trace().Any("map", skuMap).Msg("")
-	for _, skuMapInner1 := range skuMap {
-		for _, priceDim := range skuMapInner1.PriceDimensions {
+	log.Trace().Any("skuMap", skuMap).Msg("")
+	for _, skuMapInner := range skuMap {
+		for _, priceDim := range skuMapInner.PriceDimensions {
 			cost := types.CostPerUnit{}
 			switch unit := priceDim.Unit; unit {
 			case "GB-Mo":

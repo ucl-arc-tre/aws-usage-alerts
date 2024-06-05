@@ -15,17 +15,18 @@ const (
 )
 
 type Controller struct {
-	sns *snsClient.Client
+	sns snsClient.Interface
 }
 
 func New() *Controller {
-	controller := Controller{
-		sns: snsClient.New(),
-	}
-	return &controller
+	return NewWithClient(snsClient.New())
 }
 
-func (c *Controller) Send(state *types.StateV1alpha1) {
+func NewWithClient(client snsClient.Interface) *Controller {
+	return &Controller{sns: client}
+}
+
+func (c *Controller) Send(state *types.StateV1alpha1, errors []error) {
 	if state == nil {
 		log.Error().Msg("State was unset. Cannot send emails")
 		return
@@ -44,6 +45,12 @@ func (c *Controller) Send(state *types.StateV1alpha1) {
 		} else {
 			log.Debug().Any("group", group).Float64("%", usagePercentage).Msg("Calculated usage")
 		}
+	}
+	if len(errors) > 0 {
+		content += "⚠️ Errors\n"
+	}
+	for _, err := range errors {
+		content += fmt.Sprintf("%v\n", err)
 	}
 	if content != "" && shouldEmailAdmins(state) {
 		if err := c.sns.Send(header + content); err == nil {

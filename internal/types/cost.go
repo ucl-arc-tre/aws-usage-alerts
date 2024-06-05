@@ -19,6 +19,7 @@ type CostPerUnit struct {
 type Cost struct {
 	Dollars USD
 	Per     time.Duration
+	Errors  []error
 }
 
 func (c *Cost) Add(other Cost) {
@@ -38,7 +39,7 @@ type AWSAccumulatedCost struct {
 	EC2 AccumulatedCost
 }
 
-func (a *AWSAccumulatedCost) Total() AccumulatedCost {
+func (a AWSAccumulatedCost) Total() AccumulatedCost {
 	total := AccumulatedCost{At: time.Now()}
 	total.Dollars += a.EC2.Dollars
 	total.Dollars += a.EFS.Dollars

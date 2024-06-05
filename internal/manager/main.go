@@ -42,7 +42,7 @@ func (m *Manager) Loop(ctx context.Context, wg *sync.WaitGroup) {
 		m.manage()
 		select {
 		case <-ctx.Done():
-			log.Info().Msg("Exiting manage loop")
+			log.Info().Msg("Exiting manager loop")
 			return
 		case <-time.After(config.ManagerLoopDelayDuration()):
 			continue
@@ -52,8 +52,12 @@ func (m *Manager) Loop(ctx context.Context, wg *sync.WaitGroup) {
 
 func (m *Manager) manage() {
 	usage := m.aws.Usage()
-	state := m.db.Load()
+	state, err := m.db.Load()
+	if err != nil {
+		log.Err(err).Msg("Failed to load the state - cannot continue")
+		return
+	}
 	state.AddUsage(usage)
-	m.email.Send(state)
+	m.email.Send(state, usage.Errors())
 	m.db.Store(state)
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/ucl-arc-tre/aws-cost-alerts/internal/types"
@@ -60,7 +61,7 @@ func (c *MockConfigMapClient) Apply(ctx context.Context, configMap *corev1.Confi
 	return nil, nil
 }
 
-func makeWithK8sConfigMap(k8sConfigMap ...v1.ConfigMap) *ConfigMap {
+func cmFromK8sConfigMaps(k8sConfigMap ...v1.ConfigMap) *ConfigMap {
 	cm := ConfigMap{
 		client: &MockConfigMapClient{
 			ConfigMaps: k8sConfigMap,
@@ -70,12 +71,14 @@ func makeWithK8sConfigMap(k8sConfigMap ...v1.ConfigMap) *ConfigMap {
 }
 
 func TestConfigMapLoadNoConfigMapReturnsAnEmptyState(t *testing.T) {
-	assert.NotNil(t, makeWithK8sConfigMap().Load())
+	cm, err := cmFromK8sConfigMaps().Load()
+	assert.Nil(t, err)
+	assert.NotNil(t, cm)
 }
 
 func TestConfigMapSaveAndThenExistsInK8s(t *testing.T) {
 	t.Setenv("NAMESPACE", "default")
-	cm := makeWithK8sConfigMap()
+	cm := cmFromK8sConfigMaps()
 	state := types.MakeState()
 	cm.Store(&state)
 	assert.True(t, cm.existsInK8s())
@@ -84,6 +87,26 @@ func TestConfigMapSaveAndThenExistsInK8s(t *testing.T) {
 func TestConfigMapWithUnknownRepReturnsNilOnLoad(t *testing.T) {
 	namespace := "test"
 	t.Setenv("NAMESPACE", namespace)
+	k8sConfigMap := makeStateConfigMap(`{"a": "b"}`, namespace)
+	cm := cmFromK8sConfigMaps(k8sConfigMap)
+	assertLoadedConfigMapIsNilWithError(t, cm)
+}
+
+func TestConfigMapWithUnsupportedVersionReturnsNilOnLoad(t *testing.T) {
+	namespace := "test"
+	t.Setenv("NAMESPACE", namespace)
+	k8sConfigMap := makeStateConfigMap(`{"version": "v9"}`, namespace)
+	cm := cmFromK8sConfigMaps(k8sConfigMap)
+	assertLoadedConfigMapIsNilWithError(t, cm)
+}
+
+func assertLoadedConfigMapIsNilWithError(t *testing.T, cm *ConfigMap) {
+	loadedConfigMap, err := cm.Load()
+	assert.NotNil(t, err)
+	assert.Nil(t, loadedConfigMap)
+}
+
+func makeStateConfigMap(data string, namespace string) v1.ConfigMap {
 	k8sConfigMap := v1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -94,9 +117,28 @@ func TestConfigMapWithUnknownRepReturnsNilOnLoad(t *testing.T) {
 			Namespace: namespace,
 		},
 		Data: map[string]string{
-			configMapKey: `{"a": "b"}`,
+			configMapKey: data,
 		},
 	}
-	cm := makeWithK8sConfigMap(k8sConfigMap)
-	assert.Nil(t, cm.Load())
+	return k8sConfigMap
+}
+
+func TestLoadConfigMapHasRequiredFields(t *testing.T) {
+	namespace := "test"
+	t.Setenv("NAMESPACE", namespace)
+	initialState := types.MakeState()
+	email := types.EmailAddress("alice@example.com")
+	instant := time.Now()
+	initialState.EmailsSentAt[email] = instant
+	k8sConfigMap := makeStateConfigMap(initialState.Marshal(), namespace)
+	cm := cmFromK8sConfigMaps(k8sConfigMap)
+	state, err := cm.Load()
+	assert.Nil(t, err)
+	assert.WithinDuration(t, state.EmailsSentAt[email], initialState.EmailsSentAt[email], 0)
+	// storing then loading the new state should return something different
+	state.EmailsSentAt[email] = instant.Add(1 * time.Minute)
+	cm.Store(state)
+	loadedConfigMap, err := cm.Load()
+	assert.Nil(t, err)
+	assert.NotEqual(t, loadedConfigMap.EmailsSentAt[email].Unix(), initialState.EmailsSentAt[email].Unix())
 }

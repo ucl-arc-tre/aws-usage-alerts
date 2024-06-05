@@ -20,9 +20,9 @@ func NewInMemory() *InMemory {
 	return &db
 }
 
-func (d *InMemory) Load() *types.StateV1alpha1 {
+func (d *InMemory) Load() (*types.StateV1alpha1, error) {
 	d.mutex.Lock()
-	return &d.state
+	return &d.state, nil
 }
 
 func (d *InMemory) Store(state *types.StateV1alpha1) {

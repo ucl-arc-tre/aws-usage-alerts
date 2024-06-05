@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	awsEFS "github.com/aws/aws-sdk-go-v2/service/efs"
+	awsTypes "github.com/aws/aws-sdk-go-v2/service/efs/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/ucl-arc-tre/aws-cost-alerts/internal/types"
 )
@@ -21,10 +22,10 @@ type MockPricingClient struct {
 	priceListContent []byte
 }
 
-func NewMockPricingClient() *MockPricingClient {
-	data, err := os.ReadFile("testdata/price_list.json")
+func NewMockPricingClient(filepath string) *MockPricingClient {
+	data, err := os.ReadFile(filepath)
 	if err != nil {
-		panic("failed to read price list file")
+		panic(err)
 	}
 	return &MockPricingClient{priceListContent: data}
 }
@@ -36,7 +37,7 @@ func (c *MockPricingClient) PriceListJSON(serviceCode string, region string) ([]
 func NewMockClient() *Client {
 	return &Client{
 		aws:     &MockAWSClient{},
-		pricing: NewMockPricingClient(),
+		pricing: NewMockPricingClient("testdata/price_list.json"),
 	}
 }
 
@@ -52,12 +53,39 @@ func TestPriceListParse(t *testing.T) {
 }
 
 func TestCurrentCost(t *testing.T) {
+	t.Setenv("AWS_REGION", "eu-west-2")
 	client := NewMockClient()
 	cost, err := client.CurrentCostPerUnit()
-	assert.NoError(t, err)
+	assert.Error(t, err) // ther is no IA + Archive sku defined
 	assert.Equal(t, cost.Standard.Dollars, types.USD(0.33))
 	assert.Zero(t, cost.Archive.Dollars)
 	assert.Zero(t, cost.IA)
 	assert.Equal(t, cost.Standard.PerTime.Hours(), 730.5)
 	assert.Equal(t, cost.Standard.PerUnit, types.GB)
+}
+
+func TestTagValue(t *testing.T) {
+	tagKey := "a"
+	value := "b"
+	fsDesc := awsTypes.FileSystemDescription{
+		Tags: []awsTypes.Tag{{
+			Key:   &tagKey,
+			Value: &value,
+		}},
+	}
+	actualVal, exists := tagValue(fsDesc, tagKey)
+	assert.True(t, exists)
+	assert.Equal(t, value, actualVal)
+	_, existsOther := tagValue(fsDesc, "non-existant-key")
+	assert.False(t, existsOther)
+}
+
+func TestCurrentCostAccumulatesErrors(t *testing.T) {
+	client := Client{
+		aws:     &MockAWSClient{},
+		pricing: NewMockPricingClient("testdata/price_list_empty.json"),
+	}
+	cost, err := client.CurrentCostPerUnit()
+	assert.Error(t, err)
+	assert.True(t, len(cost.Errors) > 1)
 }
