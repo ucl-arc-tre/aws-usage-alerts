@@ -52,7 +52,7 @@ EOF
 }
 
 module "aws-usage-alerts" {
-  source = "../modules/aws-usage-alerts"
+  source = "../module"
 
   image               = local.image
   config_file_content = local.config_content
