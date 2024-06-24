@@ -40,10 +40,10 @@ resource "kubernetes_deployment" "this" {
   }
 
   spec {
-    replicas = 1  # WARNING: non-leased configmap backends do not support >1 replica
+    replicas = 1 # WARNING: non-leased configmap backends do not support >1 replica
 
     strategy {
-    	type = "Recreate"  # Wait for operations to finish
+      type = "Recreate" # Wait for operations to finish
     }
 
     selector {
@@ -60,7 +60,7 @@ resource "kubernetes_deployment" "this" {
       }
 
       spec {
-        restart_policy = "Always"
+        restart_policy       = "Always"
         service_account_name = kubernetes_service_account.this.metadata.0.name
 
         container {
@@ -94,7 +94,7 @@ resource "kubernetes_deployment" "this" {
           }
 
           env {
-          	name = "SNS_TOPIC_ARN"
+            name  = "SNS_TOPIC_ARN"
             value = aws_sns_topic.this.arn
           }
 
@@ -128,6 +128,17 @@ resource "kubernetes_deployment" "this" {
             http_get {
               path = "/ping"
               port = local.health_port
+            }
+          }
+
+          resources {
+            requests = {
+              cpu    = "100m"   // todo: validate
+              memory = "128Mi"
+            }
+            limits = {
+              cpu    = "1000m"
+              memory = "512Mi"
             }
           }
 
@@ -169,7 +180,7 @@ resource "kubernetes_config_map" "config" {
   }
 
   data = {
-    "config.yaml" = var.config_file_content
+    "config.yaml" = yamlencode(var.config)
   }
 }
 
@@ -230,7 +241,7 @@ resource "aws_sns_topic" "this" {
 }
 
 resource "aws_sns_topic_subscription" "main" {
-  for_each = toset(local.config.adminEmails)
+  for_each = toset(var.config.adminEmails)
 
   topic_arn = aws_sns_topic.this.arn
   protocol  = "email"

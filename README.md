@@ -1,6 +1,7 @@
 # aws-usage-alerts
 
-Real-time AWS resource usage alerts grouped on AWS tags.
+Real-time AWS resource usage alerts grouped on AWS tags. Alerts use AWS
+[SNS](https://aws.amazon.com/sns/) for email alerts.
 
 > [!WARNING]
 > Costs are provided only as an estimate. Only the AWS account provides accurate billing information.
@@ -18,8 +19,8 @@ Real-time AWS resource usage alerts grouped on AWS tags.
 module "aws-usage-alerts" {
   source = "github.com/ucl-arc-tre/aws-usage-alerts/module"
 
-  image               = "ghcr.io/ucl-arc-tre/aws-usage-alerts:0.1.0"
-  config_file_content = file("config.yaml")
+  image  = "ghcr.io/ucl-arc-tre/aws-usage-alerts:0.1.0"
+  config = yamldecode(file("config.yaml"))
 }
 ```
 

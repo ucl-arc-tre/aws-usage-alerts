@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/ucl-arc-tre/aws-cost-alerts/internal/client/ec2"
 	"github.com/ucl-arc-tre/aws-cost-alerts/internal/client/efs"
 	"github.com/ucl-arc-tre/aws-cost-alerts/internal/controller/aws"
 	"github.com/ucl-arc-tre/aws-cost-alerts/internal/controller/email"
@@ -39,11 +40,19 @@ func (c *MockEFSClient) FileSystems() []efs.EFSFileSystem {
 	}
 	return []efs.EFSFileSystem{fs}
 }
-func (c *MockEFSClient) CurrentCostPerUnit() (efs.EFSCostPerUnit, error) {
+func (c *MockEFSClient) CostPerUnit() (efs.EFSCostPerUnit, error) {
 	return efs.EFSCostPerUnit{Standard: oneUSDPerGBHour}, nil
 }
 
 type MockEC2Client struct{}
+
+func (c *MockEC2Client) Instances() ([]ec2.Instance, error) {
+	return []ec2.Instance{}, nil
+}
+
+func (c *MockEC2Client) InstanceCosts([]ec2.Instance) (ec2.InstanceCosts, error) {
+	return ec2.InstanceCosts{}, nil
+}
 
 func newMockManager() *Manager {
 	manager := Manager{

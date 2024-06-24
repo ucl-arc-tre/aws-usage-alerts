@@ -4,6 +4,5 @@ locals {
 
   image = "localhost/aws-usage-alerts"
 
-  config_content = file("${path.module}/../../config.yaml")
-  config = yamldecode(local.config_content)
+  config         = yamldecode(file("${path.module}/../../config.yaml"))
 }

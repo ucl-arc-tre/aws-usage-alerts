@@ -2,8 +2,8 @@ package efs
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"strings"
 
 	awsEFS "github.com/aws/aws-sdk-go-v2/service/efs"
 	awsTypes "github.com/aws/aws-sdk-go-v2/service/efs/types"
@@ -70,24 +70,24 @@ func (c *Client) accumulateFileSystems(fileSystems []EFSFileSystem, nextMarker *
 	}
 }
 
-func (c *Client) CurrentCostPerUnit() (EFSCostPerUnit, error) {
+func (c *Client) CostPerUnit() (EFSCostPerUnit, error) {
 	cost := EFSCostPerUnit{}
 	priceList, err := c.priceList()
 	if err != nil {
 		cost.Errors = append(cost.Errors, err)
 		return cost, err
 	}
-	if v, err := priceList.CostOfStorageClass("General Purpose"); err != nil {
+	if v, err := priceList.Standard.CostPerUnit(); err != nil {
 		cost.Errors = append(cost.Errors, err)
 	} else {
 		cost.Standard = v
 	}
-	if v, err := priceList.CostOfStorageClass("Infrequent Access"); err != nil {
+	if v, err := priceList.IA.CostPerUnit(); err != nil {
 		cost.Errors = append(cost.Errors, err)
 	} else {
 		cost.IA = v
 	}
-	if v, err := priceList.CostOfStorageClass("Archive"); err != nil {
+	if v, err := priceList.Archive.CostPerUnit(); err != nil {
 		cost.Errors = append(cost.Errors, err)
 	} else {
 		cost.Archive = v
@@ -100,14 +100,30 @@ func (c *Client) CurrentCostPerUnit() (EFSCostPerUnit, error) {
 }
 
 func (c *Client) priceList() (EFSPriceList, error) {
-	content, err := c.pricing.PriceListJSON(serviceCode, config.AWS().Region)
+	priceLists, err := c.pricing.PriceLists(serviceCode, pricingClient.ProductFilters{})
 	if err != nil {
 		return EFSPriceList{}, err
 	}
-	var priceList EFSPriceList
-	err = json.Unmarshal(content, &priceList)
-	log.Trace().Any("priceList", priceList).Msg("unmarshalled")
-	return priceList, err
+	efsPriceList := EFSPriceList{}
+	for _, priceList := range priceLists {
+		usageType, exists := priceList.Product.Attributes["usagetype"]
+		if exists && strings.Contains(usageType, "TimedStorage-ByteHrs") {
+			storageClass, storageClassExists := priceList.Product.Attributes["storageClass"]
+			if storageClassExists {
+				switch storageClass {
+				case "Infrequent Access":
+					efsPriceList.IA = priceList.Terms
+				case "General Purpose":
+					efsPriceList.Standard = priceList.Terms
+				case "Archive":
+					efsPriceList.Archive = priceList.Terms
+				}
+			} else {
+				log.Error().Any("priceList", priceList).Msg("storageClass attribute not found")
+			}
+		}
+	}
+	return efsPriceList, err
 }
 
 func tagValue(fs awsTypes.FileSystemDescription, tagKey string) (string, bool) {

@@ -2,9 +2,7 @@ package efs
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -49,83 +47,56 @@ type EFSCostPerUnit struct {
 	Errors   []error
 }
 
-type SkuId string
-
-type awsEFSPriceListProductAttributes struct {
-	StorageClass string `json:"storageClass"`
-	UsageType    string `json:"usageType"`
-}
-
-type awsEFSPriceListProduct struct {
-	Sku        SkuId                            `json:"sku"`
-	Attributes awsEFSPriceListProductAttributes `json:"attributes"`
-}
-
-type awsEFSPriceListTermSkuPriceDimension struct {
-	RateCode     string            `json:"rateCode"`
-	Unit         string            `json:"unit"`
-	PricePerUnit map[string]string `json:"pricePerUnit"`
-}
-
-type awsEFSPriceListTermSku struct {
-	Sku             SkuId `json:"sku"`
-	PriceDimensions map[string]awsEFSPriceListTermSkuPriceDimension
-}
+type AWSPriceListTerms map[string]any
 
 type EFSPriceList struct {
-	Products map[SkuId]awsEFSPriceListProduct                       `json:"products"`
-	Terms    map[string]map[SkuId]map[string]awsEFSPriceListTermSku `json:"terms"`
+	Standard AWSPriceListTerms
+	Archive  AWSPriceListTerms
+	IA       AWSPriceListTerms
 }
 
-func (e *EFSPriceList) skuFromStorageClass(storageClass string) (SkuId, error) {
-	for _, object := range e.Products {
-		if object.Attributes.StorageClass == storageClass &&
-			strings.Contains(object.Attributes.UsageType, "ByteHrs") {
-			return object.Sku, nil
+func (t AWSPriceListTerms) CostPerUnit() (types.CostPerUnit, error) {
+	onDemand, exists := t["OnDemand"]
+	if !exists {
+		return types.CostPerUnit{}, errors.New("missing OnDemand in price list terms")
+	}
+	onDemandMap := onDemand.(map[string]any)
+	for _, sku := range onDemandMap {
+		skuMap, ok := sku.(map[string]any)
+		if !ok {
+			return types.CostPerUnit{}, errors.New("failed to parse sku object as map")
 		}
-	}
-	return SkuId(""), fmt.Errorf("sku not found for [%v]", storageClass)
-}
-
-func (e *EFSPriceList) costOfSku(sku SkuId) (types.CostPerUnit, error) {
-	onDemand, ok := e.Terms["OnDemand"]
-	if !ok {
-		return types.CostPerUnit{}, errors.New("failed to find OnDemand in price list terms")
-	}
-	skuMap, ok := onDemand[sku]
-	if !ok {
-		return types.CostPerUnit{}, fmt.Errorf("failed to find [%v] in OnDemand price list", sku)
-	}
-	log.Trace().Any("skuMap", skuMap).Msg("")
-	for _, skuMapInner := range skuMap {
-		for _, priceDim := range skuMapInner.PriceDimensions {
-			cost := types.CostPerUnit{}
-			switch unit := priceDim.Unit; unit {
-			case "GB-Mo":
-				cost.PerUnit = types.GB
-				cost.PerTime = time.Duration(time.Minute * minutesPerMonth)
-			default:
-				panic(fmt.Errorf("unsupported unit [%v]", unit))
-			}
-			dollarsString, ok := priceDim.PricePerUnit["USD"]
+		priceDimMap, ok := skuMap["priceDimensions"].(map[string]any)
+		if !ok {
+			return types.CostPerUnit{}, errors.New("failed to parse inner sku object as map")
+		}
+		for _, priceDimInner := range priceDimMap {
+			priceDimInnerMap, ok := priceDimInner.(map[string]any)
 			if !ok {
-				return cost, errors.New("failed to find cost code")
+				return types.CostPerUnit{}, errors.New("failed to parse inner sku object as map")
 			}
-			if v, err := strconv.ParseFloat(dollarsString, 64); err != nil {
-				return cost, err
+			if priceDimInnerMap["unit"] != "GB-Mo" {
+				log.Warn().Msg("unit was not GB-Mo")
+				continue
+			}
+			pricePerUnitMap, ok := priceDimInnerMap["pricePerUnit"].(map[string]any)
+			if !ok {
+				log.Error().Msg("Failed to parse price dim inner per unit sku object as map")
+				continue
+			}
+			value, err := strconv.ParseFloat(pricePerUnitMap["USD"].(string), 64)
+			cost := types.CostPerUnit{
+				Dollars: types.USD(value),
+				PerTime: time.Duration(time.Minute * minutesPerMonth),
+				PerUnit: types.GB,
+			}
+			if err == nil {
+				return cost, nil
 			} else {
-				cost.Dollars = types.USD(v)
+				return types.CostPerUnit{}, err
 			}
-			return cost, nil
 		}
 	}
-	return types.CostPerUnit{}, errors.New("failed to find any sku data")
-}
+	return types.CostPerUnit{}, errors.New("failed to parse OnDemand object pricing terms")
 
-func (e *EFSPriceList) CostOfStorageClass(storageClass string) (types.CostPerUnit, error) {
-	if sku, err := e.skuFromStorageClass(storageClass); err != nil {
-		return types.CostPerUnit{}, err
-	} else {
-		return e.costOfSku(sku)
-	}
 }

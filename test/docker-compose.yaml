@@ -1,0 +1,20 @@
+services:
+  aws-usage-alerts:
+    build:
+      context: ".."
+      target: "release"
+    environment:
+      TEST: true
+      DEBUG: true
+      HEALTH_PORT: 8080
+      CONFIG_DIR: "/test"
+    volumes:
+      - type: bind
+        source: "."
+        target: "/test"
+
+  test:
+    image: "curlimages/curl"
+    command: "--fail-with-body aws-usage-alerts:8080/ping"
+    depends_on:
+      - "aws-usage-alerts"
