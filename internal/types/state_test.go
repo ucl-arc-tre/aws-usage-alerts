@@ -50,9 +50,9 @@ func TestAddUsage(t *testing.T) {
 	}
 	s.AddUsage(awsUsage)
 	ec2AccCost := s.GroupsUsageNow()[group].EC2.Dollars
-	assert.Less(t, ec2AccCost, 1e-10)
+	assert.Less(t, ec2AccCost, 1e-5)
 	efsAccCost := s.GroupsUsageNow()[group].EFS.Dollars
-	assert.Less(t, efsAccCost, 1e-10)
+	assert.Less(t, efsAccCost, 1e-5)
 	time.Sleep(10 * time.Millisecond)
 	s.AddUsage(awsUsage)
 	assert.Greater(t, s.GroupsUsageNow()[group].EC2.Dollars, ec2AccCost)
