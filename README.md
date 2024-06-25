@@ -9,6 +9,7 @@ Real-time AWS resource usage alerts grouped on AWS tags. Alerts use AWS
 ## Current support
 
 - Elastic file system (EFS)
+- Elastic compute (EC2)
 
 ## ⚙️ Setup
 
