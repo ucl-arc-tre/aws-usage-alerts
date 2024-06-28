@@ -85,7 +85,7 @@ func (c *Client) CostPerUnit() (EFSCostPerUnit, error) {
 	if v, err := priceList.IA.CostPerUnit(); err != nil {
 		cost.Errors = append(cost.Errors, err)
 	} else {
-		cost.IA = v
+		cost.InfrequentAccess = v
 	}
 	if v, err := priceList.Archive.CostPerUnit(); err != nil {
 		cost.Errors = append(cost.Errors, err)

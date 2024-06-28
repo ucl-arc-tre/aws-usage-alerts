@@ -35,16 +35,16 @@ func (e *EFSFileSystem) Cost(perUnitCost EFSCostPerUnit) types.Cost {
 		Errors: perUnitCost.Errors,
 	}
 	cost.Dollars += types.USD(float64(perUnitCost.Standard.Dollars) * e.Size.StandardBytes * bytesPerGB)
-	cost.Dollars += types.USD(float64(perUnitCost.IA.Dollars) * e.Size.IABytes * bytesPerGB)
+	cost.Dollars += types.USD(float64(perUnitCost.InfrequentAccess.Dollars) * e.Size.IABytes * bytesPerGB)
 	cost.Dollars += types.USD(float64(perUnitCost.Archive.Dollars) * e.Size.ArchiveBytes * bytesPerGB)
 	return cost
 }
 
 type EFSCostPerUnit struct {
-	Standard types.CostPerUnit
-	IA       types.CostPerUnit
-	Archive  types.CostPerUnit
-	Errors   []error
+	Standard         types.CostPerUnit
+	InfrequentAccess types.CostPerUnit
+	Archive          types.CostPerUnit
+	Errors           []error
 }
 
 type AWSPriceListTerms map[string]any

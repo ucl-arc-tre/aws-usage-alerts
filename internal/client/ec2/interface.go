@@ -7,7 +7,7 @@ import (
 )
 
 type Interface interface {
-	Instances() ([]Instance, error)
+	RunningInstances() ([]Instance, error)
 	InstanceCosts([]Instance) (InstanceCosts, error)
 }
 

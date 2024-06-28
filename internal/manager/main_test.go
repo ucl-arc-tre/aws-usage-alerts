@@ -46,7 +46,7 @@ func (c *MockEFSClient) CostPerUnit() (efs.EFSCostPerUnit, error) {
 
 type MockEC2Client struct{}
 
-func (c *MockEC2Client) Instances() ([]ec2.Instance, error) {
+func (c *MockEC2Client) RunningInstances() ([]ec2.Instance, error) {
 	return []ec2.Instance{}, nil
 }
 

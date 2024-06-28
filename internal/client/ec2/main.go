@@ -37,7 +37,7 @@ func New() *Client {
 	return &client
 }
 
-func (c *Client) Instances() ([]Instance, error) {
+func (c *Client) RunningInstances() ([]Instance, error) {
 	instances, err := c.accumulateRunningInstancesWithGroup([]Instance{}, nil)
 	if err != nil {
 		if len(instances) == 0 {
@@ -126,6 +126,7 @@ func (c *Client) averageInstanceCost(instance Instance) (InstanceCost, error) {
 	return cost, nil
 }
 
+// filter price lists for "box usage" aka. the price associated with the EC2 compute
 func filterPriceListsForBoxUsage(priceLists []pricingClient.ProductPriceList) []pricingClient.ProductPriceList {
 	res := []pricingClient.ProductPriceList{}
 	for _, pl := range priceLists {

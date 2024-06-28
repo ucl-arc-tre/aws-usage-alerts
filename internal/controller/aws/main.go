@@ -53,7 +53,7 @@ func (c *Controller) efsUsage() types.ResourceUsage {
 }
 
 func (c *Controller) ec2Usage() types.ResourceUsage {
-	instances, err := c.ec2.Instances()
+	instances, err := c.ec2.RunningInstances()
 	if err != nil {
 		log.Err(err).Msg("Failed to get EC2 instances. Skipping EC2 usage")
 		return types.ResourceUsage{}

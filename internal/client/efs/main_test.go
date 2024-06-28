@@ -65,7 +65,7 @@ func TestCurrentCost(t *testing.T) {
 	assert.Error(t, err) // ther is no IA + Archive sku defined
 	assert.Equal(t, cost.Standard.Dollars, types.USD(0.33))
 	assert.Zero(t, cost.Archive.Dollars)
-	assert.Zero(t, cost.IA)
+	assert.Zero(t, cost.InfrequentAccess)
 	assert.Equal(t, cost.Standard.PerTime.Hours(), 730.5)
 	assert.Equal(t, cost.Standard.PerUnit, types.GB)
 }
