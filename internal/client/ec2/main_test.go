@@ -9,7 +9,7 @@ import (
 	"github.com/ucl-arc-tre/aws-cost-alerts/internal/config"
 )
 
-func TestInstanceGroupOK(t *testing.T) {
+func TestGroupFromTaggedInstanceIsOK(t *testing.T) {
 	key := "group"
 	viper.Set("groupTagKey", key)
 	value := "example"
@@ -25,7 +25,7 @@ func TestInstanceGroupOK(t *testing.T) {
 	assert.Equal(t, value, string(group))
 }
 
-func TestInstanceGroupDoesNotExistWithNoTags(t *testing.T) {
+func TestGroupFromUnTaggedInstanceIsNotOK(t *testing.T) {
 	viper.Set("groupTagKey", "group")
 	_, exists := awsInstanceGroup(awsEC2Types.Instance{})
 	assert.False(t, exists)
