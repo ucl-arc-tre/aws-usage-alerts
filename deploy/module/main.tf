@@ -43,7 +43,9 @@ resource "kubernetes_deployment" "this" {
     replicas = 1 # WARNING: non-leased configmap backends do not support >1 replica
 
     strategy {
-      type = "Recreate" # Wait for operations to finish
+      # Wait for app operations to finish, rather than running rolling updates, as
+      # mulitple running pods may result in race conditions with state updates
+      type = "Recreate"
     }
 
     selector {

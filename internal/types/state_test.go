@@ -1,12 +1,16 @@
 package types
 
 import (
-	"strings"
+	"encoding/json"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
+
+type PartialState struct {
+	Version string `json:"version"`
+}
 
 func TestMakeState(t *testing.T) {
 	state := MakeState()
@@ -27,12 +31,12 @@ func TestGroupsUsage(t *testing.T) {
 			},
 		},
 	}
-	// should be no usage for the current year/month
-	_, exists := s.GroupsUsageNow()[group]
+	// should be no usage for a random current year/month
+	yearAndMonthAtTimeZero := YearAndMonthAt(time.Time{})
+	_, exists := s.GroupsUsageAt(yearAndMonthAtTimeZero)[group]
 	assert.False(t, exists)
-	s.GroupsUsageInMonth[YearAndMonthNow()] = s.GroupsUsageInMonth[yearAndMonth]
-	// but there should when it's set'
-	value, exists := s.GroupsUsageNow()[group]
+	// but there should when it's set
+	value, exists := s.GroupsUsageAt(yearAndMonth)[group]
 	assert.True(t, exists)
 	assert.NotZero(t, value.EFS.Dollars)
 }
@@ -61,7 +65,7 @@ func TestAddUsage(t *testing.T) {
 
 func TestStateMarshaling(t *testing.T) {
 	s := MakeState()
-	assert.True(t, strings.Contains(s.Marshal(), `"version"`))
-	assert.True(t, strings.HasPrefix(s.Marshal(), "{"))
-	assert.True(t, strings.HasSuffix(s.Marshal(), "}"))
+	var partialState PartialState
+	err := json.Unmarshal([]byte(s.Marshal()), &partialState)
+	assert.NoError(t, err)
 }

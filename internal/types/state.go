@@ -63,7 +63,11 @@ func (s *StateV1alpha1) AddUsage(usage AWSUsage) {
 
 // Usage for every group in the current month
 func (s *StateV1alpha1) GroupsUsageNow() GroupsUsage {
-	usage, exists := s.GroupsUsageInMonth[YearAndMonthNow()]
+	return s.GroupsUsageAt(YearAndMonthNow())
+}
+
+func (s *StateV1alpha1) GroupsUsageAt(yearAndMonth YearAndMonth) GroupsUsage {
+	usage, exists := s.GroupsUsageInMonth[yearAndMonth]
 	if exists {
 		return usage
 	} else {
@@ -91,5 +95,9 @@ func (s *StateV1alpha1) Marshal() string {
 }
 
 func YearAndMonthNow() YearAndMonth {
-	return YearAndMonth(time.Now().Format("2006-01"))
+	return YearAndMonthAt(time.Now())
+}
+
+func YearAndMonthAt(instant time.Time) YearAndMonth {
+	return YearAndMonth(instant.Format("2006-01"))
 }
