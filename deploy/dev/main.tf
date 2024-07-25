@@ -12,7 +12,6 @@ if ! cluster_exists; then
     --servers 1 \
     --agents 0 \
     --wait
-  sleep 30
 fi
 k3d kubeconfig get "${local.k3d_cluster_name}" > "${local.kubeconfig_path}"
 chmod 600 "${local.kubeconfig_path}"
@@ -54,11 +53,12 @@ EOF
 module "aws-usage-alerts" {
   source = "../module"
 
-  image               = local.image
-  config_file_content = local.config_content
-  debug_logging       = true
+  image          = local.image
+  config         = local.config
+  debug_logging  = true
 
   depends_on = [
+    null_resource.k3d_create,
     null_resource.import_image,
     null_resource.k3d_destroy
   ]

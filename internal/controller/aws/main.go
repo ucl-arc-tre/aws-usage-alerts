@@ -28,12 +28,13 @@ func (c *Controller) Usage() types.AWSUsage {
 	log.Debug().Msg("Getting AWS usage information")
 	usage := types.AWSUsage{
 		EFS: c.efsUsage(),
+		EC2: c.ec2Usage(),
 	}
 	return usage
 }
 
 func (c *Controller) efsUsage() types.ResourceUsage {
-	perUnitCost, err := c.efs.CurrentCostPerUnit()
+	perUnitCost, err := c.efs.CostPerUnit()
 	if err != nil {
 		log.Err(err).Msg("Failed to get the current cost. Skipping EFS usage")
 		return types.ResourceUsage{}
@@ -47,6 +48,35 @@ func (c *Controller) efsUsage() types.ResourceUsage {
 			usage[fs.Group] = fsCost
 		}
 	}
-	log.Debug().Any("usage", usage).Msg("")
+	log.Trace().Any("usage", usage).Msg("efs")
+	return usage
+}
+
+func (c *Controller) ec2Usage() types.ResourceUsage {
+	instances, err := c.ec2.RunningInstances()
+	if err != nil {
+		log.Err(err).Msg("Failed to get EC2 instances. Skipping EC2 usage")
+		return types.ResourceUsage{}
+	}
+	log.Debug().Int("number", len(instances)).Msg("Found running ec2 instances to group")
+	instancePricing, err := c.ec2.InstanceCosts(instances)
+	if err != nil {
+		log.Err(err).Msg("Failed to get EC2 instance pricing. Skipping EC2 usage")
+		return types.ResourceUsage{}
+	}
+	usage := types.ResourceUsage{}
+	for _, instance := range instances {
+		ec2Cost, err := instance.Cost(instancePricing)
+		if err != nil {
+			log.Err(err).Msg("Failed to get costs for instance")
+			continue
+		}
+		if groupUsage, ok := usage[instance.Group]; ok {
+			groupUsage.Add(ec2Cost)
+		} else {
+			usage[instance.Group] = ec2Cost
+		}
+	}
+	log.Debug().Any("usage", usage).Msg("ec2")
 	return usage
 }

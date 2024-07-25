@@ -1,6 +1,10 @@
 package types
 
-import "time"
+import (
+	"time"
+
+	"github.com/rs/zerolog/log"
+)
 
 type Unit string
 
@@ -34,9 +38,23 @@ type AccumulatedCost struct {
 	At      time.Time
 }
 
+func (a *AccumulatedCost) AddCostToNow(cost Cost) {
+	duration := time.Since(a.At)
+	a.Dollars += USD(float64(cost.Dollars) * (duration.Seconds() / cost.Per.Seconds()))
+	a.At = time.Now()
+	log.Trace().Any("cost", a).Msg("Added accumulated cost")
+}
+
 type AWSAccumulatedCost struct {
 	EFS AccumulatedCost
 	EC2 AccumulatedCost
+}
+
+func makeAWSAccumulatedCostNow() AWSAccumulatedCost {
+	return AWSAccumulatedCost{
+		EFS: AccumulatedCost{At: time.Now()},
+		EC2: AccumulatedCost{At: time.Now()},
+	}
 }
 
 func (a AWSAccumulatedCost) Total() AccumulatedCost {

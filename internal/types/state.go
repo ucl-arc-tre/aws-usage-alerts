@@ -42,25 +42,38 @@ func (s *StateV1alpha1) AddUsage(usage AWSUsage) {
 	for group, cost := range usage.EFS {
 		accCost, exists := groupsUsage[group]
 		if exists {
-			duration := time.Since(accCost.EFS.At)
-			accCost.EFS.Dollars += USD(float64(cost.Dollars) * (duration.Seconds() / cost.Per.Seconds()))
-			accCost.EFS.At = time.Now()
-			log.Trace().Any("cost", accCost).Any("group", group).Msg("Group accumulated cost")
+			accCost.EFS.AddCostToNow(cost)
 			groupsUsage[group] = accCost
 		} else {
-			groupsUsage[group] = AWSAccumulatedCost{
-				EFS: AccumulatedCost{At: time.Now()},
-			}
+			groupsUsage[group] = makeAWSAccumulatedCostNow()
+		}
+	}
+	for group, cost := range usage.EC2 {
+		accCost, exists := groupsUsage[group]
+		if exists {
+			accCost.EC2.AddCostToNow(cost)
+			groupsUsage[group] = accCost
+		} else {
+			groupsUsage[group] = makeAWSAccumulatedCostNow()
 		}
 	}
 	s.GroupsUsageInMonth[YearAndMonthNow()] = groupsUsage
 	log.Debug().Any("state", s).Msg("Added usage")
-	// todo: ec2
 }
 
 // Usage for every group in the current month
-func (s *StateV1alpha1) GroupsUsage() GroupsUsage {
-	return s.GroupsUsageInMonth[YearAndMonthNow()]
+func (s *StateV1alpha1) GroupsUsageNow() GroupsUsage {
+	return s.GroupsUsageAt(YearAndMonthNow())
+}
+
+func (s *StateV1alpha1) GroupsUsageAt(yearAndMonth YearAndMonth) GroupsUsage {
+	usage, exists := s.GroupsUsageInMonth[yearAndMonth]
+	if exists {
+		return usage
+	} else {
+		log.Error().Msg("Groups usage currently did not exist")
+		return GroupsUsage{}
+	}
 }
 
 func (s *StateV1alpha1) addCurrentMonthIfRequired() {
@@ -82,5 +95,9 @@ func (s *StateV1alpha1) Marshal() string {
 }
 
 func YearAndMonthNow() YearAndMonth {
-	return YearAndMonth(time.Now().Format("2006-01"))
+	return YearAndMonthAt(time.Now())
+}
+
+func YearAndMonthAt(instant time.Time) YearAndMonth {
+	return YearAndMonth(instant.Format("2006-01"))
 }

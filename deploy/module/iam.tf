@@ -14,18 +14,18 @@ data "aws_iam_policy_document" "this" {
     effect = "Allow"
     actions = [
       "elasticfilesystem:DescribeFileSystems",
-      "pricing:ListPriceLists",
+      "ec2:DescribeInstances",
+      "pricing:GetProducts",
       "pricing:GetAttributeValues",
-      "pricing:DescribeServices",
-      "pricing:GetPriceListFileUrl"
+      "pricing:DescribeServices"
     ]
     resources = ["*"] # todo
   }
 
   statement {
-  	effect = "Allow"
+    effect = "Allow"
     actions = [
-    	"SNS:Publish"
+      "SNS:Publish"
     ]
     resources = [aws_sns_topic.this.arn]
   }

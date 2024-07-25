@@ -32,7 +32,19 @@ variable "trace_logging" {
   default     = false
 }
 
-variable "config_file_content" {
-  type        = string
-  description = "File contents of the config.yaml file"
+variable "config" {
+  type = object({
+    groupTagKey    = string
+    storageBackend = string
+    adminEmails    = list(string)
+    groups = map(object({
+      threshold = number
+    }))
+  })
+  description = "Configuration map"
+
+  validation {
+    condition     = contains(["inMemory", "configMap"], var.config.storageBackend)
+    error_message = "storageBackend must be one of: {inMemory, configMap}"
+  }
 }

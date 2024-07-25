@@ -32,7 +32,7 @@ func (c *Controller) Send(state *types.StateV1alpha1, errors []error) {
 		return
 	}
 	content := ""
-	for group, cost := range state.GroupsUsage() {
+	for group, cost := range state.GroupsUsageNow() {
 		threshold := config.GroupThreshold(group)
 		if threshold < 1e-15 {
 			log.Warn().Any("group", group).Msg("Unset or zero threshold")

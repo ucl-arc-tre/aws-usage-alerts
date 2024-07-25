@@ -8,7 +8,7 @@ import (
 
 type Interface interface {
 	FileSystems() []EFSFileSystem
-	CurrentCostPerUnit() (EFSCostPerUnit, error)
+	CostPerUnit() (EFSCostPerUnit, error)
 }
 
 type awsClientInterface interface {

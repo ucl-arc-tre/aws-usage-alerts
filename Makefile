@@ -9,8 +9,16 @@ help:
 build:
 	docker build -t localhost/aws-usage-alerts .
 
-test:
+test: test-unit test-integration
+
+test-unit:
 	go test ./...
+
+test-integration:
+	cd test && \
+	docker compose build aws-usage-alerts && \
+	docker compose run test && \
+	docker compose down
 
 dev:
 	cd deploy/dev && \
