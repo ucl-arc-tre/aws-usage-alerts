@@ -185,6 +185,7 @@ func usdPerHourForOnDemandInPriceLists(priceLists []pricingClient.ProductPriceLi
 				value, err := strconv.ParseFloat(pricePerUnitMap["USD"].(string), 64)
 				if err != nil {
 					log.Err(err).Msg("Failed to get USD value")
+					continue
 				}
 				values = append(values, value)
 			}

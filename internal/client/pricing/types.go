@@ -11,14 +11,16 @@ type ProductFilter struct {
 	Value string
 }
 
+type ProductWithAttributes struct {
+	Attributes map[string]string
+	SKU        string
+}
+
 type ProductPriceList struct {
-	Product struct {
-		Attributes map[string]string
-		SKU        string
-	} `json:"product"`
-	Terms           map[string]any `json:"terms"`
-	Version         string         `json:"version"`
-	PublicationDate string         `json:"publicationDate"`
+	Product         ProductWithAttributes `json:"product"`
+	Terms           map[string]any        `json:"terms"`
+	Version         string                `json:"version"`
+	PublicationDate string                `json:"publicationDate"`
 }
 
 type ProductFilters []ProductFilter

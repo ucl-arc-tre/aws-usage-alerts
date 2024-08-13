@@ -1,4 +1,4 @@
-FROM golang:1.22.3-alpine AS builder
+FROM golang:1.22.5-alpine AS builder
 
 RUN adduser --uid 1000 --disabled-password user && \
   apk add -U --no-cache ca-certificates
@@ -11,18 +11,19 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 COPY . .
 RUN --mount=type=cache,target=/root/.cache/go-build \
-  go build -v -o main cmd/main.go && \
-  chmod +x main
+  go build -v -o main cmd/main.go
 
 # --------------------------------------------------------
 FROM scratch as release
 
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /app/main main
+COPY --from=builder --chmod=777 /app/main main
 
 ENV DEBUG="false"
 ENV HEALTH_PORT="8080"
+ENV UPDATE_DELAY_SECONDS="60"
+ENV SNS_TOPIC_ARN=""
 
 USER user
 CMD ["./main"]

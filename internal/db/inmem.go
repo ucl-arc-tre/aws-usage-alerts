@@ -20,11 +20,13 @@ func NewInMemory() *InMemory {
 	return &db
 }
 
+// Load the state and lock for reading/writing
 func (d *InMemory) Load() (*types.StateV1alpha1, error) {
 	d.mutex.Lock()
 	return &d.state, nil
 }
 
+// Store state and unlock for reading/writing
 func (d *InMemory) Store(state *types.StateV1alpha1) {
 	defer d.mutex.Unlock()
 	if state != nil {

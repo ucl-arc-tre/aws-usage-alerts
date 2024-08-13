@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -69,7 +70,11 @@ func GroupTagKey() string {
 }
 
 func ManagerLoopDelayDuration() time.Duration {
-	return 1 * time.Minute
+	seconds, err := strconv.Atoi(envOrDefault("UPDATE_DELAY_SECONDS", "60"))
+	if err != nil {
+		panic(err)
+	}
+	return time.Duration(seconds) * time.Second
 }
 
 func AWS() aws.Config {
@@ -90,7 +95,7 @@ func HealthPort() string {
 	return envOrDefault("HEALTH_PORT", "8080")
 }
 
-func TopicARN() string {
+func SNSTopicARN() string {
 	return env("SNS_TOPIC_ARN")
 }
 

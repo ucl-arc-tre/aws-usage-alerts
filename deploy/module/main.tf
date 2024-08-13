@@ -101,6 +101,11 @@ resource "kubernetes_deployment" "this" {
           }
 
           env {
+            name  = "UPDATE_DELAY_SECONDS"
+            value = var.update_delay_seconds
+          }
+
+          env {
             name = "AWS_ACCESS_KEY_ID"
             value_from {
               secret_key_ref {
@@ -135,11 +140,11 @@ resource "kubernetes_deployment" "this" {
 
           resources {
             requests = {
-              cpu    = "100m"   // todo: validate
+              cpu    = "100m"
               memory = "128Mi"
             }
             limits = {
-              cpu    = "1000m"
+              cpu    = "500m"
               memory = "512Mi"
             }
           }
@@ -212,6 +217,7 @@ resource "kubernetes_role" "this" {
     namespace = kubernetes_namespace.this.metadata.0.name
   }
 
+  # not needed with in-memory
   rule {
     api_groups = [""]
     resources  = ["configmaps"]
