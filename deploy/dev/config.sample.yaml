@@ -1,0 +1,8 @@
+groupTagKey: project
+storageBackend: inMemory
+adminEmails:
+  - alice@example.com
+
+groups:
+  example:
+    threshold: 100

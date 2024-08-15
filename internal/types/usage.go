@@ -26,7 +26,7 @@ func (u *AWSUsage) Errors() []error {
 	for _, err := range u.EFS.Errors() {
 		errors = append(errors, fmt.Errorf("EFS:%v", err))
 	}
-	for _, err := range u.EFS.Errors() {
+	for _, err := range u.EC2.Errors() {
 		errors = append(errors, fmt.Errorf("EC2:%v", err))
 	}
 	return errors

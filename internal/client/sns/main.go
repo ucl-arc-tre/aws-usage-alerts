@@ -20,7 +20,7 @@ func New() *Client {
 // Send an email with some content
 func (c *Client) Send(content string) error {
 	subject := "aws-usage-alerts: Notification"
-	topicArn := config.TopicARN()
+	topicArn := config.SNSTopicARN()
 	if topicArn == "" {
 		return errors.New("cannot send SNS message. TopicARN is unset")
 	}

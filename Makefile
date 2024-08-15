@@ -20,10 +20,21 @@ test-integration:
 	docker compose run test && \
 	docker compose down
 
-dev:
+test-cov:
+	go test -v -coverprofile tmp_cov.out ./...
+	go tool cover -html tmp_cov.out -o tmp_cov.html
+	open tmp_cov.html
+
+dev: dev-config-exists
 	cd deploy/dev && \
 	terraform init && \
 	terraform apply --auto-approve
+
+dev-config-exists:
+	filepath="deploy/dev/config.yaml" && \
+	if [ ! -f $$filepath ]; then \
+        echo "$$filepath did not exist. Please create it" && exit 1; \
+    fi
 
 dev-destroy:
 	cd deploy/dev && \

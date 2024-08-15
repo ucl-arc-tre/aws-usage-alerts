@@ -32,6 +32,17 @@ variable "trace_logging" {
   default     = false
 }
 
+variable "update_delay_seconds" {
+  type        = number
+  description = "Number of seconds between updates"
+  default     = 60
+
+  validation {
+    condition     = var.update_delay_seconds >= 1
+    error_message = "Delay must be at least one second"
+  }
+}
+
 variable "config" {
   type = object({
     groupTagKey    = string

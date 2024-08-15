@@ -1,8 +1,0 @@
-groupTagKey: project # Tag key to use for grouping
-storageBackend: inMemory # Options: {inMemory, configMap}
-adminEmails: # Email addresses of administrators
-  - alice@example.com
-
-groups:
-  example: # All resources tagged with project=example
-    threshold: 100 # Cost threshold in $ / month
