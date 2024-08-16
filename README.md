@@ -32,9 +32,9 @@ Deploy the [aws-usage-alerts](./deploy/module) terraform module i.e
 
 ```hcl
 module "aws-usage-alerts" {
-  source = "github.com/ucl-arc-tre/aws-usage-alerts/deploy/module"
+  source = "github.com/ucl-arc-tre/aws-usage-alerts/deploy/module?ref=0.1.2"
 
-  image  = "ghcr.io/ucl-arc-tre/aws-usage-alerts:0.1.0"
+  image  = "ghcr.io/ucl-arc-tre/aws-usage-alerts:0.1.2"
   config = {
     groupTagKey    = "project" # Tag key to use for grouping
     storageBackend = "configMap" # Options: {inMemory, configMap}
