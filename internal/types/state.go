@@ -13,7 +13,7 @@ type GroupsUsage map[Group]AWSAccumulatedCost
 
 type StateVersion string
 
-type StateWithVersionVersion struct {
+type StateWithVersion struct {
 	Version StateVersion `json:"version"`
 }
 

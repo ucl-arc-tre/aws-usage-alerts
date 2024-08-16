@@ -1,16 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "5.51.1"
-    }
-
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "2.30.0"
-    }
-  }
-}
 
 resource "kubernetes_namespace" "this" {
   metadata {
@@ -140,8 +127,8 @@ resource "kubernetes_deployment" "this" {
 
           resources {
             requests = {
-              cpu    = "100m"
-              memory = "128Mi"
+              cpu    = "50m"
+              memory = "64Mi"
             }
             limits = {
               cpu    = "500m"
@@ -242,17 +229,4 @@ resource "kubernetes_role_binding" "this" {
     name      = kubernetes_role.this.metadata.0.name
     api_group = "rbac.authorization.k8s.io"
   }
-}
-
-resource "aws_sns_topic" "this" {
-  name = "${var.app_name}-topic"
-}
-
-resource "aws_sns_topic_subscription" "main" {
-  for_each = toset(var.config.adminEmails)
-
-  topic_arn = aws_sns_topic.this.arn
-  protocol  = "email"
-
-  endpoint = each.value
 }
