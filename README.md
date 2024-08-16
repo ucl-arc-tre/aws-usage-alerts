@@ -32,7 +32,7 @@ Deploy the [aws-usage-alerts](./deploy/module) terraform module i.e
 
 ```hcl
 module "aws-usage-alerts" {
-  source = "github.com/ucl-arc-tre/aws-usage-alerts/module"
+  source = "github.com/ucl-arc-tre/aws-usage-alerts/deploy/module"
 
   image  = "ghcr.io/ucl-arc-tre/aws-usage-alerts:0.1.0"
   config = {

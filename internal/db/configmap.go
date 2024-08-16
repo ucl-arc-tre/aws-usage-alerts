@@ -47,7 +47,7 @@ func (cm *ConfigMap) Load() (*types.StateV1alpha1, error) {
 		log.Error().Str("name", configMapName).Str("key", configMapKey).Msg("Failed to find configMap")
 		return nil, errors.New("Failed to load state")
 	}
-	var stateWithVersion types.StateWithVersionVersion
+	var stateWithVersion types.StateWithVersion
 	if err := json.Unmarshal([]byte(data), &stateWithVersion); err != nil {
 		log.Err(err).Msg("Failed to unmarshal state into something with a defined version")
 		return nil, errors.New("Failed to load state")
