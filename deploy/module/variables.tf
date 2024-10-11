@@ -17,6 +17,7 @@ variable "app_name" {
 variable "unique_infix" {
   type    = string
   default = ""
+  description = "Unique naming infix for aws resources. If unset a random string will be generated"
 }
 
 variable "replicas" {
