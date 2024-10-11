@@ -14,6 +14,12 @@ variable "app_name" {
   default = "aws-usage-alerts"
 }
 
+variable "unique_infix" {
+  type    = string
+  default = ""
+  description = "Unique naming infix for aws resources. If unset a random string will be generated"
+}
+
 variable "replicas" {
   type        = number
   default     = 1

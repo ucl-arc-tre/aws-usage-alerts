@@ -1,5 +1,5 @@
 resource "aws_iam_user" "this" {
-  name = "${var.app_name}-user"
+  name = "${var.app_name}-${local.naming_infix}-user"
   path = "/"
 
   tags = local.aws_tags

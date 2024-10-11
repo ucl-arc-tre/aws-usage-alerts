@@ -17,6 +17,13 @@ resource "kubernetes_network_policy" "deny_all" {
   }
 }
 
+resource "random_string" "infix" {
+  length  = 6
+  lower   = true
+  upper   = false
+  special = false
+}
+
 resource "kubernetes_deployment" "this" {
   metadata {
     name      = "aws-usage-alerts"
