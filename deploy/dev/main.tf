@@ -53,9 +53,9 @@ EOF
 module "aws-usage-alerts" {
   source = "../module"
 
-  image          = local.image
-  config         = local.config
-  debug_logging  = true
+  image         = local.image
+  config        = local.config
+  debug_logging = true
 
   depends_on = [
     null_resource.k3d_create,
