@@ -14,6 +14,11 @@ variable "app_name" {
   default = "aws-usage-alerts"
 }
 
+variable "unique_infix" {
+  type    = string
+  default = ""
+}
+
 variable "replicas" {
   type        = number
   default     = 1

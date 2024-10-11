@@ -1,5 +1,5 @@
 resource "aws_sns_topic" "this" {
-  name = "${var.app_name}-topic"
+  name = "${var.app_name}-${local.naming_infix}-topic"
 }
 
 resource "aws_sns_topic_subscription" "main" {
