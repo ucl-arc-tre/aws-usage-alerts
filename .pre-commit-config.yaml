@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: end-of-file-fixer
       - id: mixed-line-ending
@@ -13,7 +13,7 @@ repos:
         args: ["--baseline", ".github/.secrets.baseline"]
 
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.58.2
+    rev: v1.63.4
     hooks:
       - id: golangci-lint
         args:
