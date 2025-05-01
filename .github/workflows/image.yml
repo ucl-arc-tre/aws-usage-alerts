@@ -1,5 +1,5 @@
 ---
-name: Build and Publish Image
+name: Image
 
 on:
   push:
@@ -10,7 +10,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  image:
+  build-and-publish:
     runs-on: ubuntu-latest
 
     permissions:

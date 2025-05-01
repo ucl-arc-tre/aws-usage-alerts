@@ -13,7 +13,7 @@ repos:
         args: ["--baseline", ".github/.secrets.baseline"]
 
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.63.4
+    rev: v2.1.5
     hooks:
       - id: golangci-lint
         args:
