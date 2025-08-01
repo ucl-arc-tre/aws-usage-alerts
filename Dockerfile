@@ -1,4 +1,4 @@
-FROM golang:1.24.2-alpine AS builder
+FROM golang:1.24.5-alpine AS builder
 
 RUN adduser --uid 1000 --disabled-password user && \
   apk add -U --no-cache ca-certificates
