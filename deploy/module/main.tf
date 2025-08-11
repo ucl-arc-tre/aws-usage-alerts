@@ -86,7 +86,7 @@ resource "kubernetes_deployment" "this" {
 
           env {
             name  = "AWS_REGION"
-            value = data.aws_region.current.name
+            value = data.aws_region.current.region
           }
 
           env {
