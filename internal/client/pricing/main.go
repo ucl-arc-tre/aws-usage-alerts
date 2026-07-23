@@ -26,22 +26,30 @@ func New() *Client {
 }
 
 func (c *Client) PriceLists(serviceCode string, filters ProductFilters) ([]ProductPriceList, error) {
+	priceLists := []ProductPriceList{}
 	filters.appendRegionFilter()
-	output, err := c.aws.GetProducts(
-		context.Background(),
+
+	awsPriceLists := []string{}
+	paginator := awsPricing.NewGetProductsPaginator(
+		c.aws,
 		&awsPricing.GetProductsInput{
 			ServiceCode: &serviceCode,
 			Filters:     filters.ToAWS(),
 		},
+		func(options *awsPricing.GetProductsPaginatorOptions) {
+			options.StopOnDuplicateToken = true
+		},
 	)
-	if err != nil {
-		return []ProductPriceList{}, err
+
+	for paginator.HasMorePages() {
+		output, err := paginator.NextPage(context.Background())
+		if err != nil {
+			return priceLists, err
+		}
+		awsPriceLists = append(awsPriceLists, output.PriceList...)
 	}
-	if output.NextToken != nil {
-		log.Warn().Str("serviceCode", serviceCode).Msg("Had paginated response. Ignoring!")
-	}
-	priceLists := []ProductPriceList{}
-	for _, jsonStr := range output.PriceList {
+
+	for _, jsonStr := range awsPriceLists {
 		var productPriceList ProductPriceList
 		if err := json.Unmarshal([]byte(jsonStr), &productPriceList); err != nil {
 			log.Err(err).Msg("Failed to unmarshal price list JSON for product")
