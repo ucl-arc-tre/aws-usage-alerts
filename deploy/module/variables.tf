@@ -15,8 +15,8 @@ variable "app_name" {
 }
 
 variable "unique_infix" {
-  type    = string
-  default = ""
+  type        = string
+  default     = ""
   description = "Unique naming infix for aws resources. If unset a random string will be generated"
 }
 
@@ -47,6 +47,14 @@ variable "update_delay_seconds" {
     condition     = var.update_delay_seconds >= 1
     error_message = "Delay must be at least one second"
   }
+}
+
+variable "irsa" {
+  description = "Configuration for EKS IAM role for service accounts. If unset a standard AWS IAM user will be created with static credentials."
+  default     = null
+  type = object({
+    eks_cluster_name = string
+  })
 }
 
 variable "config" {
