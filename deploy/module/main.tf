@@ -1,7 +1,11 @@
-
 resource "kubernetes_namespace" "this" {
   metadata {
     name = var.namespace
+
+    annotations = {
+      "pod-security.kubernetes.io/enforce"         = "restricted"
+      "pod-security.kubernetes.io/enforce-version" = "v1.35"
+    }
   }
 }
 
@@ -38,7 +42,7 @@ resource "kubernetes_deployment" "this" {
 
     strategy {
       # Wait for app operations to finish, rather than running rolling updates, as
-      # mulitple running pods may result in race conditions with state updates
+      # multiple running pods may result in race conditions with state updates
       type = "Recreate"
     }
 
@@ -99,22 +103,15 @@ resource "kubernetes_deployment" "this" {
             value = var.update_delay_seconds
           }
 
-          env {
-            name = "AWS_ACCESS_KEY_ID"
-            value_from {
-              secret_key_ref {
-                name = kubernetes_secret.aws_keys.metadata.0.name
-                key  = "AWS_ACCESS_KEY_ID"
-              }
-            }
-          }
-
-          env {
-            name = "AWS_SECRET_ACCESS_KEY"
-            value_from {
-              secret_key_ref {
-                name = kubernetes_secret.aws_keys.metadata.0.name
-                key  = "AWS_SECRET_ACCESS_KEY"
+          dynamic "env" {
+            for_each = local.irsa_enabled ? toset([]) : toset(["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"])
+            content {
+              name = env.key
+              value_from {
+                secret_key_ref {
+                  name = kubernetes_secret.aws_keys[0].metadata.0.name
+                  key  = env.value
+                }
               }
             }
           }
@@ -172,6 +169,8 @@ resource "kubernetes_deployment" "this" {
       }
     }
   }
+
+  depends_on = [kubernetes_annotations.service_account]
 }
 
 resource "kubernetes_config_map" "config" {
@@ -186,23 +185,51 @@ resource "kubernetes_config_map" "config" {
 }
 
 resource "kubernetes_secret" "aws_keys" {
+  count = local.irsa_enabled ? 0 : 1
+
   metadata {
     name      = "aws-keys"
     namespace = kubernetes_namespace.this.metadata.0.name
   }
 
   data = {
-    "AWS_ACCESS_KEY_ID"     = aws_iam_access_key.this.id
-    "AWS_SECRET_ACCESS_KEY" = aws_iam_access_key.this.secret
+    "AWS_ACCESS_KEY_ID"     = aws_iam_access_key.this[0].id
+    "AWS_SECRET_ACCESS_KEY" = aws_iam_access_key.this[0].secret
   }
 }
 
+moved {
+  from = kubernetes_secret.aws_keys
+  to   = kubernetes_secret.aws_keys[0]
+}
 
 resource "kubernetes_service_account" "this" {
   metadata {
     name      = var.app_name
     namespace = kubernetes_namespace.this.metadata.0.name
   }
+
+  lifecycle {
+    ignore_changes = [
+      metadata[0].annotations, # managed by kubernetes_annotations resource
+    ]
+  }
+}
+
+resource "kubernetes_annotations" "service_account" {
+  api_version = "v1"
+  kind        = "ServiceAccount"
+
+  metadata {
+    name      = var.app_name
+    namespace = kubernetes_namespace.this.metadata.0.name
+  }
+
+  annotations = merge(
+    local.irsa_enabled ? { "eks.amazonaws.com/role-arn" = aws_iam_role.irsa[0].arn } : {}
+  )
+
+  depends_on = [kubernetes_service_account.this]
 }
 
 resource "kubernetes_role" "this" {

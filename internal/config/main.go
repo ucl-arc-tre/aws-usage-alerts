@@ -85,7 +85,7 @@ func AWS() aws.Config {
 	if config.Region == "" {
 		log.Warn().
 			Str("defaultAWSRegion", defaultAWSRegion).
-			Msg("AWS region not explicity set. Please set 'AWS_REGION' as an env var")
+			Msg("AWS region not set. Please set 'AWS_REGION' as an env var")
 		config.Region = defaultAWSRegion
 	}
 	return config
