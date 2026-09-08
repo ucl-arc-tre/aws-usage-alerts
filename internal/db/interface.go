@@ -7,5 +7,5 @@ type Database interface {
 	Load() (*types.StateV1alpha1, error)
 
 	// Store the state and release the state lock
-	Store(state *types.StateV1alpha1)
+	Store(state *types.StateV1alpha1) error
 }

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/rs/zerolog/log"
@@ -27,11 +28,11 @@ func (d *InMemory) Load() (*types.StateV1alpha1, error) {
 }
 
 // Store state and unlock for reading/writing
-func (d *InMemory) Store(state *types.StateV1alpha1) {
+func (d *InMemory) Store(state *types.StateV1alpha1) error {
 	defer d.mutex.Unlock()
-	if state != nil {
-		d.state = *state
-	} else {
-		log.Error().Msg("Attempted to save a nil state")
+	if state == nil {
+		return fmt.Errorf("cannot store nil state")
 	}
+	d.state = *state
+	return nil
 }

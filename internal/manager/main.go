@@ -67,7 +67,9 @@ func (m *Manager) manage() (*types.StateV1alpha1, error) {
 	}
 	state.AddUsage(usage)
 	m.email.Send(state, usage.Errors())
-	m.db.Store(state)
+	if err := m.db.Store(state); err != nil {
+		log.Err(err).Msg("Failed to store state")
+	}
 	return state, nil
 }
 
