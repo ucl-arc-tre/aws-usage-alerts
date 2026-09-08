@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/ucl-arc-tre/aws-cost-alerts/internal/types"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -146,4 +147,31 @@ func TestLoadConfigMapHasRequiredFields(t *testing.T) {
 	loadedConfigMap, err := cm.Load()
 	assert.Nil(t, err)
 	assert.NotEqual(t, loadedConfigMap.EmailsSentAt[email].Unix(), initialState.EmailsSentAt[email].Unix())
+}
+
+func TestConfigMapStoreMigratesStringDataToZipData(t *testing.T) {
+	namespace := "test"
+	t.Setenv("NAMESPACE", namespace)
+	initialState := types.MakeState()
+	initialState.EmailsSentAt[types.EmailAddress("alice@example.com")] = time.Date(2026, time.September, 8, 12, 0, 0, 0, time.UTC)
+	legacy := makeStateConfigMap(initialState.Marshal(), namespace)
+	cm := cmFromK8sConfigMaps(legacy)
+
+	state, err := cm.Load()
+	require.NoError(t, err)
+	require.NotNil(t, state)
+	assert.JSONEq(t, initialState.Marshal(), state.Marshal())
+
+	require.NoError(t, cm.Store(state))
+	stored, err := cm.client.Get(context.Background(), configMapName, metav1.GetOptions{})
+	require.NoError(t, err)
+	require.NotNil(t, stored)
+	assert.Empty(t, stored.Data)
+	assert.Len(t, stored.BinaryData, 1)
+	require.NotEmpty(t, stored.BinaryData[configMapKeyZipData])
+
+	reloaded, err := cm.Load()
+	require.NoError(t, err)
+	require.NotNil(t, reloaded)
+	assert.JSONEq(t, initialState.Marshal(), reloaded.Marshal())
 }
