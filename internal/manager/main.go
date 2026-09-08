@@ -11,6 +11,7 @@ import (
 	awsController "github.com/ucl-arc-tre/aws-cost-alerts/internal/controller/aws"
 	emailController "github.com/ucl-arc-tre/aws-cost-alerts/internal/controller/email"
 	"github.com/ucl-arc-tre/aws-cost-alerts/internal/db"
+	"github.com/ucl-arc-tre/aws-cost-alerts/internal/types"
 )
 
 type Manager struct {
@@ -38,8 +39,16 @@ func New() *Manager {
 func (m *Manager) Loop(ctx context.Context, wg *sync.WaitGroup) {
 	wg.Add(1)
 	defer wg.Done()
+
+	var lastTotalsLog time.Time
 	for {
-		m.manage()
+		state, err := m.manage()
+		if err != nil {
+			log.Err(err).Msg("Failed to manage")
+		} else if time.Since(lastTotalsLog) >= time.Hour {
+			logCumulativeUsage(state)
+			lastTotalsLog = time.Now()
+		}
 		select {
 		case <-ctx.Done():
 			log.Info().Msg("Exiting manager loop")
@@ -50,16 +59,32 @@ func (m *Manager) Loop(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
-func (m *Manager) manage() {
+func (m *Manager) manage() (*types.StateV1alpha1, error) {
 	usage := m.aws.Usage()
 	state, err := m.db.Load()
 	if err != nil {
-		log.Err(err).Msg("Failed to load the state - cannot continue")
-		return
+		return state, err
 	}
 	state.AddUsage(usage)
 	m.email.Send(state, usage.Errors())
 	if err := m.db.Store(state); err != nil {
 		log.Err(err).Msg("Failed to store state")
+	}
+	return state, nil
+}
+
+func logCumulativeUsage(state *types.StateV1alpha1) {
+	totals := map[types.Group]types.USD{}
+	for _, projectsUsage := range state.GroupsUsageInMonth {
+		for group, usage := range projectsUsage {
+			value, exists := totals[group]
+			if !exists {
+				value = 0
+			}
+			totals[group] = value + usage.Total().Dollars
+		}
+	}
+	for group, total := range totals {
+		log.Info().Any("group", group).Int("$", int(total)).Msg("Cumulative total")
 	}
 }
