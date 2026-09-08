@@ -7,6 +7,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -55,8 +57,24 @@ func (cm *ConfigMap) Load() (*types.StateV1alpha1, error) {
 		log.Error().Str("name", configMapName).Str("key", configMapKeyStringData).Msg("Failed to find configMap")
 		return nil, errors.New("Failed to load state")
 	}
-	if zipDataExists {
-		// uncompress zip
+	if zipDataExists && len(zipData) > 0 {
+		zipReader, err := zip.NewReader(bytes.NewReader(zipData), int64(len(zipData)))
+		if err != nil {
+			return nil, fmt.Errorf("failed to open state ZIP: %w", err)
+		}
+		file, err := zipReader.Open(configMapKeyZipData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open state ZIP entry: %w", err)
+		}
+		data, readErr := io.ReadAll(file)
+		closeErr := file.Close()
+		if readErr != nil {
+			return nil, fmt.Errorf("failed to read state ZIP entry: %w", readErr)
+		}
+		if closeErr != nil {
+			return nil, fmt.Errorf("failed to close state ZIP entry: %w", closeErr)
+		}
+		stringData = string(data)
 	}
 
 	var stateWithVersion types.StateWithVersion
@@ -111,7 +129,7 @@ func (cm *ConfigMap) toK8s(state *types.StateV1alpha1) *v1.ConfigMap {
 			Namespace: currentPodNamespace(),
 		},
 		BinaryData: map[string][]byte{
-			configMapKeyStringData: compress(state.Marshal()),
+			configMapKeyZipData: compress(state.Marshal()),
 		},
 	}
 	return &k8sConfigMap
