@@ -36,7 +36,9 @@ func TestCanSaveNilStateAndDoesNothing(t *testing.T) {
 	db := NewInMemory()
 	_, err := db.Load()
 	assert.NoError(t, err)
-	db.Store(nil)
+	err = db.Store(nil)
+	assert.Error(t, err)
+
 	state, err := db.Load()
 	assert.NoError(t, err)
 	assert.NotNil(t, state)

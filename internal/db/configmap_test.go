@@ -2,15 +2,15 @@ package db
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/ucl-arc-tre/aws-cost-alerts/internal/types"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	k8sTypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	corev1 "k8s.io/client-go/applyconfigurations/core/v1"
@@ -21,7 +21,6 @@ type MockConfigMapClient struct {
 }
 
 func (c *MockConfigMapClient) Create(ctx context.Context, configMap *v1.ConfigMap, opts metav1.CreateOptions) (*v1.ConfigMap, error) {
-	fmt.Println("herre")
 	c.ConfigMaps = append(c.ConfigMaps, *configMap)
 	return nil, nil
 }
@@ -32,7 +31,10 @@ func (c MockConfigMapClient) Update(ctx context.Context, configMap *v1.ConfigMap
 			return nil, nil
 		}
 	}
-	return nil, errors.New("Failed to find matching config map")
+	return nil, apierrors.NewNotFound(
+		schema.GroupResource{Resource: "configmaps"},
+		configMap.Name,
+	)
 }
 func (c *MockConfigMapClient) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
 	return nil
@@ -46,7 +48,10 @@ func (c *MockConfigMapClient) Get(ctx context.Context, name string, opts metav1.
 			return &cm, nil
 		}
 	}
-	return nil, errors.New("Failed to find matching config map")
+	return nil, apierrors.NewNotFound(
+		schema.GroupResource{Resource: "configmaps"},
+		name,
+	)
 }
 func (c *MockConfigMapClient) List(ctx context.Context, opts metav1.ListOptions) (*v1.ConfigMapList, error) {
 	return nil, nil

@@ -47,7 +47,7 @@ func (cm *ConfigMap) Load() (*types.StateV1alpha1, error) {
 		log.Info().Err(err).Msg("State did not exist - creating")
 		state := types.MakeState()
 		return &state, nil
-	} else if err != nil || k8sConfigMap == nil {
+	} else if err != nil {
 		return nil, err
 	}
 	stringData, stringDataExists := k8sConfigMap.Data[configMapKeyStringData]

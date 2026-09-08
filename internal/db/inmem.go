@@ -29,10 +29,10 @@ func (d *InMemory) Load() (*types.StateV1alpha1, error) {
 
 // Store state and unlock for reading/writing
 func (d *InMemory) Store(state *types.StateV1alpha1) error {
+	defer d.mutex.Unlock()
 	if state == nil {
 		return fmt.Errorf("cannot store nil state")
 	}
-	defer d.mutex.Unlock()
 	d.state = *state
 	return nil
 }
