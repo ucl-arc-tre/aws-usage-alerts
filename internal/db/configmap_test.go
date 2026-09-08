@@ -117,7 +117,7 @@ func makeStateConfigMap(data string, namespace string) v1.ConfigMap {
 			Namespace: namespace,
 		},
 		Data: map[string]string{
-			configMapKey: data,
+			configMapKeyStringData: data,
 		},
 	}
 	return k8sConfigMap
