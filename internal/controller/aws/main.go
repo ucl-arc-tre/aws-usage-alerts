@@ -49,7 +49,11 @@ func (c *Controller) efsUsage() (types.ResourceUsage, error) {
 		return types.ResourceUsage{}, err
 	}
 	usage := types.ResourceUsage{}
-	for _, fs := range c.efs.FileSystems() {
+	filesystems, err := c.efs.FileSystems()
+	if err != nil {
+		return types.ResourceUsage{}, err
+	}
+	for _, fs := range filesystems {
 		fsCost := fs.Cost(perUnitCost)
 		groupUsage, exists := usage[fs.Group]
 		if !exists {

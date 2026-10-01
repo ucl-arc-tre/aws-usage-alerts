@@ -27,7 +27,7 @@ func (c *MockSNSClient) Send(content string) error {
 
 type MockEFSClient struct{}
 
-func (c *MockEFSClient) FileSystems() []efs.EFSFileSystem {
+func (c *MockEFSClient) FileSystems() ([]efs.EFSFileSystem, error) {
 	fs := efs.EFSFileSystem{
 		Group: testGroup,
 		Size: struct {
@@ -38,7 +38,7 @@ func (c *MockEFSClient) FileSystems() []efs.EFSFileSystem {
 			StandardBytes: 5000.0,
 		},
 	}
-	return []efs.EFSFileSystem{fs}
+	return []efs.EFSFileSystem{fs}, nil
 }
 func (c *MockEFSClient) CostPerUnit() (efs.EFSCostPerUnit, error) {
 	return efs.EFSCostPerUnit{Standard: oneUSDPerGBHour}, nil
