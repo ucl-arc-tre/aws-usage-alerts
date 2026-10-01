@@ -81,7 +81,7 @@ func (c *Client) accumulateRunningInstancesWithGroup(instances []Instance, nextT
 	}
 	log.Debug().Int("number", len(instances)).Msg("Added AWS instances")
 	if output.NextToken != nil {
-		return c.accumulateRunningInstancesWithGroup(instances, nextToken)
+		return c.accumulateRunningInstancesWithGroup(instances, output.NextToken)
 	}
 	return instances, nil
 }
