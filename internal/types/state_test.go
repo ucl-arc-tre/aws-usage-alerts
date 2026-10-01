@@ -69,3 +69,53 @@ func TestStateMarshaling(t *testing.T) {
 	err := json.Unmarshal([]byte(s.Marshal()), &partialState)
 	assert.NoError(t, err)
 }
+
+func TestAddUsageDoesNotChargeIdleResources(t *testing.T) {
+	for _, resource := range []string{"EFS", "EC2", "both"} {
+		t.Run(resource, func(t *testing.T) {
+			s := MakeState()
+			group := Group("a")
+			old := time.Now().Add(-72 * time.Hour)
+			s.GroupsUsageInMonth[YearAndMonthNow()] = GroupsUsage{
+				group: AWSAccumulatedCost{
+					EFS: AccumulatedCost{Dollars: 10, At: old},
+					EC2: AccumulatedCost{Dollars: 10, At: old},
+				},
+			}
+			cost := Cost{Dollars: 1, Per: time.Hour}
+			usage := AWSUsage{
+				EFS: ResourceUsage{group: cost},
+				EC2: ResourceUsage{group: cost},
+			}
+			if resource == "EFS" || resource == "both" {
+				usage.EFS = nil
+			}
+			if resource == "EC2" || resource == "both" {
+				usage.EC2 = nil
+			}
+
+			before := time.Now()
+			s.AddUsage(usage)
+			after := time.Now()
+			idle := s.GroupsUsageNow()[group]
+			for name, accumulated := range map[string]AccumulatedCost{"EFS": idle.EFS, "EC2": idle.EC2} {
+				if resource == name || resource == "both" {
+					assert.Equal(t, USD(10), accumulated.Dollars)
+					assert.False(t, accumulated.At.Before(before))
+					assert.False(t, accumulated.At.After(after))
+				} else {
+					assert.GreaterOrEqual(t, accumulated.Dollars, USD(82))
+				}
+			}
+
+			s.AddUsage(AWSUsage{
+				EFS: ResourceUsage{group: cost},
+				EC2: ResourceUsage{group: cost},
+			})
+			resumed := s.GroupsUsageNow()[group]
+			maxIncrease := USD(time.Since(before).Hours())
+			assert.InDelta(t, float64(idle.EFS.Dollars), float64(resumed.EFS.Dollars), float64(maxIncrease)+1e-9)
+			assert.InDelta(t, float64(idle.EC2.Dollars), float64(resumed.EC2.Dollars), float64(maxIncrease)+1e-9)
+		})
+	}
+}

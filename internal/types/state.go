@@ -11,6 +11,19 @@ type YearAndMonth string
 
 type GroupsUsage map[Group]AWSAccumulatedCost
 
+func (g GroupsUsage) advanceAbsentResourceTimestamps(usage AWSUsage) {
+	now := time.Now()
+	for group, accCost := range g {
+		if _, exists := usage.EFS[group]; !exists {
+			accCost.EFS.At = now
+		}
+		if _, exists := usage.EC2[group]; !exists {
+			accCost.EC2.At = now
+		}
+		g[group] = accCost
+	}
+}
+
 type StateVersion string
 
 type StateWithVersion struct {
@@ -38,6 +51,7 @@ func (s *StateV1alpha1) AddUsage(usage AWSUsage) {
 	}
 	s.addCurrentMonthIfRequired()
 	groupsUsage := s.GroupsUsageInMonth[YearAndMonthNow()]
+	groupsUsage.advanceAbsentResourceTimestamps(usage)
 	log.Debug().Msg("Adding resource usage")
 	for group, cost := range usage.EFS {
 		accCost, exists := groupsUsage[group]
