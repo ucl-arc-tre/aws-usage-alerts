@@ -51,11 +51,12 @@ func (c *Controller) efsUsage() (types.ResourceUsage, error) {
 	usage := types.ResourceUsage{}
 	for _, fs := range c.efs.FileSystems() {
 		fsCost := fs.Cost(perUnitCost)
-		if groupUsage, ok := usage[fs.Group]; ok {
-			groupUsage.Add(fsCost)
-		} else {
-			usage[fs.Group] = fsCost
+		groupUsage, exists := usage[fs.Group]
+		if !exists {
+			groupUsage = types.Cost{Per: fsCost.Per}
 		}
+		groupUsage.Add(fsCost)
+		usage[fs.Group] = groupUsage
 	}
 	log.Trace().Any("usage", usage).Msg("efs")
 	return usage, nil
@@ -67,23 +68,24 @@ func (c *Controller) ec2Usage() (types.ResourceUsage, error) {
 		return types.ResourceUsage{}, err
 	}
 	log.Debug().Int("number", len(instances)).Msg("Found running ec2 instances to group")
-	instancePricing, err := c.ec2.InstanceCosts(instances)
+	instanceCost, err := c.ec2.InstanceCosts(instances)
 	if err != nil {
 		return types.ResourceUsage{}, err
 	}
 	usage := types.ResourceUsage{}
 	errs := []error{}
 	for _, instance := range instances {
-		ec2Cost, err := instance.Cost(instancePricing)
+		ec2Cost, err := instance.Cost(instanceCost)
 		if err != nil {
 			errs = append(errs, err)
 			continue
 		}
-		if groupUsage, ok := usage[instance.Group]; ok {
-			groupUsage.Add(ec2Cost)
-		} else {
-			usage[instance.Group] = ec2Cost
+		groupUsage, exists := usage[instance.Group]
+		if !exists {
+			groupUsage = types.Cost{Per: ec2Cost.Per}
 		}
+		groupUsage.Add(ec2Cost)
+		usage[instance.Group] = groupUsage
 	}
 	log.Debug().Any("usage", usage).Msg("ec2")
 	return usage, errors.Join(errs...)
