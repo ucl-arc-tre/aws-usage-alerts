@@ -2,6 +2,8 @@ package ec2
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -92,11 +94,10 @@ func (c *Client) InstanceCosts(instances []Instance) (InstanceCosts, error) {
 		_, exists := costs[instance.Type]
 		if !exists {
 			cost, err := c.averageInstanceCost(instance)
-			if err == nil {
-				costs[instance.Type] = cost
-			} else {
-				log.Err(err).Any("type", instance.Type).Msg("Failed to get instance cost")
+			if err != nil {
+				return nil, fmt.Errorf("failed to get cost for %s: %w", instance.Type, err)
 			}
+			costs[instance.Type] = cost
 		}
 	}
 	return costs, nil
@@ -117,9 +118,16 @@ func (c *Client) averageInstanceCost(instance Instance) (InstanceCost, error) {
 		Msg("Found price lists for instance type")
 	priceLists = filterPriceListsForBoxUsage(priceLists)
 	values := usdPerHourForOnDemandInPriceLists(priceLists)
+	if len(values) == 0 {
+		return InstanceCost{}, fmt.Errorf("no hourly on-demand prices for %s", instance.Type)
+	}
+	average := mean(values)
+	if math.IsNaN(average) || math.IsInf(average, 0) {
+		return InstanceCost{}, fmt.Errorf("non-finite hourly on-demand price for %s", instance.Type)
+	}
 	cost := InstanceCost{
 		Cost: types.Cost{
-			Dollars: types.USD(mean(values)),
+			Dollars: types.USD(average),
 			Per:     time.Hour,
 		},
 	}

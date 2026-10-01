@@ -66,7 +66,9 @@ func TestAddUsage(t *testing.T) {
 func TestStateMarshaling(t *testing.T) {
 	s := MakeState()
 	var partialState PartialState
-	err := json.Unmarshal([]byte(s.Marshal()), &partialState)
+	data, err := s.Marshal()
+	assert.NoError(t, err)
+	err = json.Unmarshal([]byte(data), &partialState)
 	assert.NoError(t, err)
 }
 

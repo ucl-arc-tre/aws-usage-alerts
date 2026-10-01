@@ -99,13 +99,12 @@ func (s *StateV1alpha1) addCurrentMonthIfRequired() {
 	}
 }
 
-func (s *StateV1alpha1) Marshal() string {
-	if result, err := json.Marshal(s); err != nil {
-		log.Err(err).Msg("Failed to marshal. Using an empty string")
-		return ""
-	} else {
-		return string(result)
+func (s *StateV1alpha1) Marshal() (string, error) {
+	result, err := json.Marshal(s)
+	if err != nil {
+		return "", err
 	}
+	return string(result), nil
 }
 
 func YearAndMonthNow() YearAndMonth {

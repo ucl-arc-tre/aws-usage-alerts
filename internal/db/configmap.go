@@ -99,12 +99,15 @@ func (cm *ConfigMap) Load() (*types.StateV1alpha1, error) {
 }
 
 func (cm *ConfigMap) Store(state *types.StateV1alpha1) error {
-	var err error
+	k8sConfigMap, err := cm.toK8s(state)
+	if err != nil {
+		return err
+	}
 	if !cm.existsInK8s() {
 		log.Debug().Msg("State did not yet exist in k8s")
-		_, err = cm.client.Create(context.Background(), cm.toK8s(state), metav1.CreateOptions{})
+		_, err = cm.client.Create(context.Background(), k8sConfigMap, metav1.CreateOptions{})
 	} else {
-		_, err = cm.client.Update(context.Background(), cm.toK8s(state), metav1.UpdateOptions{})
+		_, err = cm.client.Update(context.Background(), k8sConfigMap, metav1.UpdateOptions{})
 	}
 	return err
 }
@@ -114,10 +117,13 @@ func (cm *ConfigMap) existsInK8s() bool {
 	return k8sConfigMap != nil && err == nil
 }
 
-func (cm *ConfigMap) toK8s(state *types.StateV1alpha1) *v1.ConfigMap {
+func (cm *ConfigMap) toK8s(state *types.StateV1alpha1) (*v1.ConfigMap, error) {
 	if cm == nil || state == nil {
-		log.Error().Msg("Cannot convert state to k8s config map - not defined")
-		return nil
+		return nil, errors.New("cannot convert undefined state to config map")
+	}
+	data, err := state.Marshal()
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize state: %w", err)
 	}
 	k8sConfigMap := v1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -129,10 +135,10 @@ func (cm *ConfigMap) toK8s(state *types.StateV1alpha1) *v1.ConfigMap {
 			Namespace: currentPodNamespace(),
 		},
 		BinaryData: map[string][]byte{
-			configMapKeyZipData: compress(state.Marshal()),
+			configMapKeyZipData: compress(data),
 		},
 	}
-	return &k8sConfigMap
+	return &k8sConfigMap, nil
 }
 
 func compress(value string) []byte {
