@@ -8,22 +8,22 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/ucl-arc-tre/aws-cost-alerts/internal/config"
-	awsController "github.com/ucl-arc-tre/aws-cost-alerts/internal/controller/aws"
-	emailController "github.com/ucl-arc-tre/aws-cost-alerts/internal/controller/email"
+	"github.com/ucl-arc-tre/aws-cost-alerts/internal/controller/aws"
+	"github.com/ucl-arc-tre/aws-cost-alerts/internal/controller/email"
 	"github.com/ucl-arc-tre/aws-cost-alerts/internal/db"
 	"github.com/ucl-arc-tre/aws-cost-alerts/internal/types"
 )
 
 type Manager struct {
-	aws   *awsController.Controller
-	email *emailController.Controller
+	aws   *aws.Controller
+	email *email.Controller
 	db    db.Database
 }
 
 func New() *Manager {
 	manager := Manager{
-		aws:   awsController.New(),
-		email: emailController.New(),
+		aws:   aws.New(),
+		email: email.New(),
 	}
 	switch backend := config.StorageBackend(); backend {
 	case "inMemory":
@@ -60,7 +60,10 @@ func (m *Manager) Loop(ctx context.Context, wg *sync.WaitGroup) {
 }
 
 func (m *Manager) manage() (*types.StateV1alpha1, error) {
-	usage := m.aws.Usage()
+	usage, err := m.aws.Usage()
+	if err != nil {
+		return nil, err
+	}
 	state, err := m.db.Load()
 	if err != nil {
 		return state, err

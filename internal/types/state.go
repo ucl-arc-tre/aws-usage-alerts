@@ -11,6 +11,19 @@ type YearAndMonth string
 
 type GroupsUsage map[Group]AWSAccumulatedCost
 
+func (g GroupsUsage) advanceAbsentResourceTimestamps(usage AWSUsage) {
+	now := time.Now()
+	for group, accCost := range g {
+		if _, exists := usage.EFS[group]; !exists {
+			accCost.EFS.At = now
+		}
+		if _, exists := usage.EC2[group]; !exists {
+			accCost.EC2.At = now
+		}
+		g[group] = accCost
+	}
+}
+
 type StateVersion string
 
 type StateWithVersion struct {
@@ -36,8 +49,10 @@ func (s *StateV1alpha1) AddUsage(usage AWSUsage) {
 		log.Error().Msg("Cannot add usage with undefined maps")
 		return
 	}
+	yearAndMonthNow := YearAndMonthNow()
 	s.addCurrentMonthIfRequired()
-	groupsUsage := s.GroupsUsageInMonth[YearAndMonthNow()]
+	groupsUsage := s.GroupsUsageInMonth[yearAndMonthNow]
+	groupsUsage.advanceAbsentResourceTimestamps(usage)
 	log.Debug().Msg("Adding resource usage")
 	for group, cost := range usage.EFS {
 		accCost, exists := groupsUsage[group]
@@ -57,7 +72,7 @@ func (s *StateV1alpha1) AddUsage(usage AWSUsage) {
 			groupsUsage[group] = makeAWSAccumulatedCostNow()
 		}
 	}
-	s.GroupsUsageInMonth[YearAndMonthNow()] = groupsUsage
+	s.GroupsUsageInMonth[yearAndMonthNow] = groupsUsage
 	log.Debug().Any("state", s).Msg("Added usage")
 }
 
@@ -85,13 +100,12 @@ func (s *StateV1alpha1) addCurrentMonthIfRequired() {
 	}
 }
 
-func (s *StateV1alpha1) Marshal() string {
-	if result, err := json.Marshal(s); err != nil {
-		log.Err(err).Msg("Failed to marshal. Using an empty string")
-		return ""
-	} else {
-		return string(result)
+func (s *StateV1alpha1) Marshal() (string, error) {
+	result, err := json.Marshal(s)
+	if err != nil {
+		return "", err
 	}
+	return string(result), nil
 }
 
 func YearAndMonthNow() YearAndMonth {

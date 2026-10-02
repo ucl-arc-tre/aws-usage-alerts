@@ -7,7 +7,7 @@ import (
 )
 
 type Interface interface {
-	FileSystems() []EFSFileSystem
+	FileSystems() ([]EFSFileSystem, error)
 	CostPerUnit() (EFSCostPerUnit, error)
 }
 

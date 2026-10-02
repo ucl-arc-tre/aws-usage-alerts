@@ -30,11 +30,11 @@ func New() *Client {
 	return &client
 }
 
-func (c *Client) FileSystems() []EFSFileSystem {
+func (c *Client) FileSystems() ([]EFSFileSystem, error) {
 	return c.accumulateFileSystems([]EFSFileSystem{}, nil)
 }
 
-func (c *Client) accumulateFileSystems(fileSystems []EFSFileSystem, nextMarker *string) []EFSFileSystem {
+func (c *Client) accumulateFileSystems(fileSystems []EFSFileSystem, nextMarker *string) ([]EFSFileSystem, error) {
 	output, err := c.aws.DescribeFileSystems(
 		context.Background(),
 		&awsEFS.DescribeFileSystemsInput{
@@ -42,8 +42,7 @@ func (c *Client) accumulateFileSystems(fileSystems []EFSFileSystem, nextMarker *
 		},
 	)
 	if err != nil {
-		log.Err(err).Msg("Failed to describe EFS file systems")
-		return fileSystems
+		return fileSystems, err
 	}
 	for _, fs := range output.FileSystems {
 		if fs.FileSystemId != nil {
@@ -64,10 +63,9 @@ func (c *Client) accumulateFileSystems(fileSystems []EFSFileSystem, nextMarker *
 		}
 	}
 	if output.NextMarker == nil {
-		return fileSystems
-	} else {
-		return c.accumulateFileSystems(fileSystems, output.NextMarker)
+		return fileSystems, nil
 	}
+	return c.accumulateFileSystems(fileSystems, output.NextMarker)
 }
 
 func (c *Client) CostPerUnit() (EFSCostPerUnit, error) {

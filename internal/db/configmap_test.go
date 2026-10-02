@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"math"
 	"testing"
 	"time"
 
@@ -136,7 +137,7 @@ func TestLoadConfigMapHasRequiredFields(t *testing.T) {
 	email := types.EmailAddress("alice@example.com")
 	instant := time.Now()
 	initialState.EmailsSentAt[email] = instant
-	k8sConfigMap := makeStateConfigMap(initialState.Marshal(), namespace)
+	k8sConfigMap := makeStateConfigMap(marshalState(t, &initialState), namespace)
 	cm := cmFromK8sConfigMaps(k8sConfigMap)
 	state, err := cm.Load()
 	assert.Nil(t, err)
@@ -154,13 +155,13 @@ func TestConfigMapStoreMigratesStringDataToZipData(t *testing.T) {
 	t.Setenv("NAMESPACE", namespace)
 	initialState := types.MakeState()
 	initialState.EmailsSentAt[types.EmailAddress("alice@example.com")] = time.Date(2026, time.September, 8, 12, 0, 0, 0, time.UTC)
-	legacy := makeStateConfigMap(initialState.Marshal(), namespace)
+	legacy := makeStateConfigMap(marshalState(t, &initialState), namespace)
 	cm := cmFromK8sConfigMaps(legacy)
 
 	state, err := cm.Load()
 	require.NoError(t, err)
 	require.NotNil(t, state)
-	assert.JSONEq(t, initialState.Marshal(), state.Marshal())
+	assert.JSONEq(t, marshalState(t, &initialState), marshalState(t, state))
 
 	require.NoError(t, cm.Store(state))
 	stored, err := cm.client.Get(context.Background(), configMapName, metav1.GetOptions{})
@@ -173,5 +174,36 @@ func TestConfigMapStoreMigratesStringDataToZipData(t *testing.T) {
 	reloaded, err := cm.Load()
 	require.NoError(t, err)
 	require.NotNil(t, reloaded)
-	assert.JSONEq(t, initialState.Marshal(), reloaded.Marshal())
+	assert.JSONEq(t, marshalState(t, &initialState), marshalState(t, reloaded))
+}
+
+func marshalState(t *testing.T, state *types.StateV1alpha1) string {
+	t.Helper()
+	data, err := state.Marshal()
+	require.NoError(t, err)
+	return data
+}
+
+func TestConfigMapStoreRejectsNonFiniteCosts(t *testing.T) {
+	t.Setenv("NAMESPACE", "test")
+	for _, value := range []float64{math.NaN(), math.Inf(1), math.Inf(-1)} {
+		for _, existing := range []bool{false, true} {
+			cm := cmFromK8sConfigMaps()
+			state := types.MakeState()
+			if existing {
+				require.NoError(t, cm.Store(&state))
+			}
+			client := cm.client.(*MockConfigMapClient)
+			before := append([]v1.ConfigMap(nil), client.ConfigMaps...)
+			state.GroupsUsageInMonth[types.YearAndMonthNow()] = types.GroupsUsage{
+				"a": types.AWSAccumulatedCost{EC2: types.AccumulatedCost{Dollars: types.USD(value)}},
+			}
+			require.Error(t, cm.Store(&state))
+			assert.Equal(t, before, client.ConfigMaps)
+			if existing {
+				_, err := cm.Load()
+				require.NoError(t, err)
+			}
+		}
+	}
 }
