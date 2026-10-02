@@ -49,8 +49,9 @@ func (s *StateV1alpha1) AddUsage(usage AWSUsage) {
 		log.Error().Msg("Cannot add usage with undefined maps")
 		return
 	}
+	yearAndMonthNow := YearAndMonthNow()
 	s.addCurrentMonthIfRequired()
-	groupsUsage := s.GroupsUsageInMonth[YearAndMonthNow()]
+	groupsUsage := s.GroupsUsageInMonth[yearAndMonthNow]
 	groupsUsage.advanceAbsentResourceTimestamps(usage)
 	log.Debug().Msg("Adding resource usage")
 	for group, cost := range usage.EFS {
@@ -71,7 +72,7 @@ func (s *StateV1alpha1) AddUsage(usage AWSUsage) {
 			groupsUsage[group] = makeAWSAccumulatedCostNow()
 		}
 	}
-	s.GroupsUsageInMonth[YearAndMonthNow()] = groupsUsage
+	s.GroupsUsageInMonth[yearAndMonthNow] = groupsUsage
 	log.Debug().Any("state", s).Msg("Added usage")
 }
 
