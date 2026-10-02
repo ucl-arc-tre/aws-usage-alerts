@@ -29,17 +29,18 @@ func NewWithClients(ec2 ec2Client.Interface, efs efsClient.Interface) *Controlle
 func (c *Controller) Usage() (types.AWSUsage, error) {
 	log.Debug().Msg("Getting AWS usage information")
 	usage := types.AWSUsage{}
+	errs := []error{}
 	if efs, err := c.efsUsage(); err != nil {
-		return usage, err
+		errs = append(errs, err)
 	} else {
 		usage.EFS = efs
 	}
 	if ec2, err := c.ec2Usage(); err != nil {
-		return usage, err
+		errs = append(errs, err)
 	} else {
 		usage.EC2 = ec2
 	}
-	return usage, nil
+	return usage, errors.Join(errs...)
 }
 
 func (c *Controller) efsUsage() (types.ResourceUsage, error) {
